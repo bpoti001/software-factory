@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🏭 Factory: Verify ADR & Deep Module Boundaries",
+      "type": "shell",
+      "command": "./scripts/verify-governance.sh",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🏭 Factory: Install / Sync Git Hooks & Copilot Config",
+      "type": "shell",
+      "command": "./scripts/factory-init.sh",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}

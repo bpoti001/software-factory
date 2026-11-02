@@ -1,0 +1,7 @@
+# Upstream full repo clones (skills are already extracted into .agents/skills/)
+.upstream/
+
+# OS & Editor files
+.DS_Store
+*.swp
+*~

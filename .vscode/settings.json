@@ -1,0 +1,40 @@
+{
+  "chat.promptFiles": true,
+  "chat.agent.enabled": true,
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": ".github/copilot-instructions.md"
+    },
+    {
+      "file": "CONTEXT.md"
+    },
+    {
+      "file": "GLOSSARY.md"
+    }
+  ],
+  "github.copilot.chat.reviewSelection.instructions": [
+    {
+      "file": "CODING_STANDARDS.md"
+    },
+    {
+      "file": "CONTEXT.md"
+    }
+  ],
+  "github.copilot.chat.testGeneration.instructions": [
+    {
+      "file": ".github/copilot-instructions.md"
+    },
+    {
+      "file": "CODING_STANDARDS.md"
+    },
+    {
+      "text": "Always write tests through the Deep Module's public entry point (the interface is the test surface). Never mock internal private subfolder files. Follow Red-Green-Refactor TDD."
+    }
+  ],
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Use conventional commit format: <type>(<JIRA-KEY>): <description> [ADR-NNNN]. Types: feat, fix, refactor, docs, test, chore, perf, ci. Always reference the Jira key and governing ADR ID when applicable."
+    }
+  ]
+}
