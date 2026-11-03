@@ -397,17 +397,43 @@ software-factory/
 │   └── tasks.json                       # VS Code tasks for governance scripts
 ├── .agents/
 │   └── skills/                          # 43 modular agent skills (ADR, TDD, Deep Modules, Review)
+├── src/
+│   ├── cli/
+│   │   └── factory.mjs                  # Executable CLI adapter (size | verify | pr-report)
+│   └── modules/
+│       ├── sizing/                      # Deep Module (ADR-0001, ADR-0002): Small/Medium/Large + Safety Escalation
+│       │   ├── index.mjs                # Public Seam: classifyTaskSize
+│       │   └── lib/classifier.mjs       # Private implementation
+│       ├── governance/                  # Deep Module (ADR-0001, ADR-0003, ADR-0004): Seam, Drift & ADR Parity
+│       │   ├── index.mjs                # Public Seam: verifyGovernance, parseAdrRegistry
+│       │   └── lib/*                    # Private implementation
+│       └── review/                      # Deep Module (ADR-0001, ADR-0005): Merge Danger & /visual-pr
+│           ├── index.mjs                # Public Seam: assessMergeDanger, generateVisualPrBody
+│           └── lib/*                    # Private implementation
+├── tests/
+│   ├── sizing.seam.test.mjs             # Seam tests for Adaptive Agent Sizing (ADR-0002)
+│   ├── governance.seam.test.mjs         # Seam tests for Seam, Drift, Parity & Delete-Zone (ADR-0003, ADR-0004)
+│   ├── review.seam.test.mjs             # Seam tests for Merge Danger & /visual-pr (ADR-0005)
+│   └── cli.integration.test.mjs         # End-to-end CLI integration tests
 ├── docs/
+│   ├── wayfinder/
+│   │   └── MAP-0001-software-factory-engine.md # Wayfinder Map & Grill-With-Docs Design Tree
 │   ├── agents/
 │   │   ├── issue-tracker.md             # Jira + Confluence + Bitbucket MCP tool binding contract
 │   │   └── domain.md                    # CONTEXT.md <-> Confluence synchronization rules
 │   ├── adr/
-│   │   ├── README.md                    # Local ADR register
+│   │   ├── README.md                    # Local ADR register (100% parity with CONTEXT.md)
 │   │   ├── template.md                  # Standard Nygard + Deep Module ADR template
-│   │   └── 0000-adr-driven-software-factory.md # Foundation ADR for this repository
+│   │   ├── 0000-adr-driven-software-factory.md
+│   │   ├── 0001-deep-module-boundaries.md
+│   │   ├── 0002-adaptive-agent-sizing-classifier.md
+│   │   ├── 0003-hybrid-adr-confluence-sync.md
+│   │   ├── 0004-deterministic-governance-cli.md
+│   │   └── 0005-two-axis-review-and-merge-danger.md
 │   └── rfc/
 │       ├── README.md                    # Local RFC register
-│       └── template.md                  # Cross-cutting RFC & Tracer-Bullet DAG template
+│       ├── template.md                  # Cross-cutting RFC & Tracer-Bullet DAG template
+│       └── RFC-0001-executable-software-factory-engine.md
 ├── scripts/
 │   ├── factory-init.sh                  # Bootstrap script for target repositories & git hooks
 │   ├── verify-governance.sh             # Fast (<2s) local & CI governance gate check
@@ -436,15 +462,27 @@ All 43 agent skills reside in [`.agents/skills/`](.agents/skills/) and are symli
 
 ---
 
-## Verification & CI Enforcement
+## Verification, CLI & CI Enforcement
 
-Run the deterministic governance check locally at any time (regardless of `Small`, `Medium`, or `Large` agent size):
+Run the zero-dependency **Software Factory CLI Engine** (`src/cli/factory.mjs`) or seam test suite locally at any time:
 
 ```bash
+# 1. Classify any task into Small [S] / Medium [M] / Large [L] (with Safety Escalation)
+node src/cli/factory.mjs size "Change color of primary submit button to #2563EB" --files src/ui/Button.css
+
+# 2. Run deterministic ADR Parity, Deep Module Seam, Structural Drift & Delete-Zone checks
 ./scripts/verify-governance.sh
+# (or: node src/cli/factory.mjs verify)
+
+# 3. Generate a /visual-pr description with One-Way vs Two-Way Door Merge Danger scoring
+node src/cli/factory.mjs pr-report --title "feat(ARCH-100): Executable Factory Engine" --jira ARCH-100 --adrs ADR-0001,ADR-0002,ADR-0004,ADR-0005
+
+# 4. Run all 17 Deep Module Seam & CLI Integration Tests (<200ms)
+npm test
 ```
 
-### What It Verifies in `< 2 seconds`:
-1. **Deep Module Seam Boundary**: Flags any import that crosses module boundaries into private `/lib/` or `/internal/` directories.
-2. **Structural Drift Gate**: If package manifests (`package.json`, `pom.xml`, etc.), database schemas/migrations, or new module roots change without an accompanying update to `CONTEXT.md` or `docs/adr/`, the build fails (catching any `Small [S]` task that accidentally introduced `Large [L]` architectural drift).
-3. **Delete-Zone Guard**: Scans changed files against deprecated patterns registered in Section 5 of `CONTEXT.md` to prevent zombie code recreation.
+### What `verify-governance.sh` / `factory verify` Enforces in `< 500ms`:
+1. **Deep Module Seam Boundary (`ADR-0001`)**: Flags any import that crosses module boundaries into private `/lib/` or `/internal/` directories, or any test that bypasses a module's root `index.mjs` seam.
+2. **Structural Drift Gate (`ADR-0004`)**: If package manifests (`package.json`, `pom.xml`, etc.) or database schemas/migrations change without an accompanying update to `CONTEXT.md`, `docs/adr/`, or `docs/rfc/`, the build fails.
+3. **ADR Registry Parity (`ADR-0003`)**: Verifies that every `accepted` ADR row in `CONTEXT.md` Section 3 has a matching markdown file in `docs/adr/` and is indexed in `docs/adr/README.md`.
+4. **Delete-Zone Guard (`ADR-0001`)**: Scans changed files against deprecated patterns registered in Section 5 of `CONTEXT.md` (such as barrel `export * from './lib/'` re-exports) to prevent zombie code recreation.

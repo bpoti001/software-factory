@@ -8,36 +8,37 @@
 
 ## 1. Project Identity & Scale
 
-- **System Name**: Enterprise Software Platform (Multi-Team Scale Architecture)
-- **Git Host**: Bitbucket (accessed via Bitbucket MCP in VS Code)
-- **Issue Tracker**: Jira (accessed via Atlassian/Jira MCP in VS Code)
-- **Knowledge Base & ADR Store**: Confluence + `docs/adr/` mirror (accessed via Atlassian/Confluence MCP in VS Code)
+- **System Name**: ADR-Governed Software Factory & Executable Governance Engine
+- **Git Host**: Bitbucket / GitHub (accessed via Bitbucket MCP / `gh` CLI)
+- **Issue Tracker**: Jira / GitHub Issues (accessed via Atlassian/Jira MCP)
+- **Knowledge Base & ADR Store**: Confluence + `docs/adr/` mirror (accessed via Atlassian/Confluence MCP)
 - **Engineering Methodology**:
-  - **Everything Claude Code (ECC)**: Principal engineering practices, immutability, TDD, security gates, and ADR refactoring.
-  - **GSD (Get Shit Done)**: Deep primary-source research and zero-hallucination phase execution.
-  - **HumanLayer (Dexter Horthy)**: 4-Gate Feature Workflow (Product -> Architecture/ADR -> Program Design -> Vertical Slices) and `/show-me` visual alignment.
-  - **Matt Pocock PR Brakes**: Deep Modules (`codebase-design`), Separate Standards Review (`CODING_STANDARDS.md`), Two-Axis Code Review, Merge Danger (`One-Way` vs. `Two-Way` Door), and `/retro` feedback loops.
+  - **Adaptive Agent Sizing (`Small [S]` | `Medium [M]` | `Large [L]`)**: Skips ceremony on trivial UI/copy tweaks (`Small`), runs 4-Gate TDD within existing ADRs (`Medium`), and halts for ADR/RFC creation on architectural drift (`Large`).
+  - **Wayfinder & Grill-With-Docs**: Charts complex work as decision maps (`docs/wayfinder/`) and sharpens domain vocabulary in `GLOSSARY.md`.
+  - **4-Gate Feature Delivery**: Product (Jira) -> Architecture (Confluence ADR) -> Program Design (`/show-me`) -> Vertical Tracer-Bullet TDD (`/tdd`).
+  - **Three-Layer PR Brakes**: Deep Modules (`codebase-design`), Separate Standards Review (`CODING_STANDARDS.md`), Two-Axis Code Review, Merge Danger (`One-Way` vs. `Two-Way` Door), and `/retro` feedback loops.
 
 ---
 
 ## 2. Canonical Architecture Map & Module Ownership
 
-All packages/modules enforce **Deep Module boundaries** (small public entry points at the module root; private implementation inside `lib/` or `internal/`).
+All packages/modules enforce **Deep Module boundaries** (small public entry points at `src/modules/<domain>/index.mjs`; private implementation inside `lib/`).
 
 | Module / Subsystem | Repository Path | Responsibility & Public Seam | Governing ADRs |
 |---|---|---|---|
-| **API Gateway & Contracts** | `src/api/` | Request validation, auth middleware, versioned route contracts | `ADR-0001`, `ADR-0003` |
-| **Core Domain Modules** | `src/modules/<domain>/` | Deep domain logic exposed strictly via `<domain>/index.*` | `ADR-0002`, `ADR-0004` |
-| **Persistence & Streams** | `src/storage/` | Repository adapters, transactional outbox, streaming pipelines | `ADR-0005` |
-| **Observability & Audit** | `src/telemetry/` | Structured logging, OpenTelemetry tracing, compliance audit trail | `ADR-0006` |
-| **Agent & Governance Config** | `.github/`, `docs/adr/` | Copilot agents, slash prompts, ADRs, RFCs, coding standards | `ADR-0000` |
+| **Adaptive Sizing Module** | `src/modules/sizing/` | Classifies tasks into `Small [S]`, `Medium [M]`, or `Large [L]` with safety escalation via `src/modules/sizing/index.mjs` | `ADR-0001`, `ADR-0002` |
+| **Governance & Parity Module** | `src/modules/governance/` | Verifies Deep Module seams, structural drift, `CONTEXT.md` <-> `docs/adr/` parity, and Delete-Zone rules via `src/modules/governance/index.mjs` | `ADR-0001`, `ADR-0003`, `ADR-0004` |
+| **Two-Axis Review & Merge Danger Module** | `src/modules/review/` | Scores `One-Way` vs `Two-Way Door` Merge Danger + Blast Radius and formats `/visual-pr` Markdown via `src/modules/review/index.mjs` | `ADR-0001`, `ADR-0005` |
+| **Factory CLI & Git/CI Hooks** | `src/cli/factory.mjs`, `scripts/` | Zero-dependency CLI adapter (`size`, `verify`, `pr-report`) & repository bootstrap scripts | `ADR-0004` |
+| **Agent & Governance Config** | `.github/`, `docs/adr/`, `docs/wayfinder/` | Copilot agents, slash prompts, ADRs, RFCs, Wayfinder maps, coding standards | `ADR-0000`, `ADR-0003` |
 
 ### Navigation Jump Table ("Where to Look")
 
 | If you need to... | Go to... | Verify with... |
 |---|---|---|
-| Understand domain terms & bounded contexts | [`GLOSSARY.md`](./GLOSSARY.md) | Domain types & schema definitions |
-| Check if an architectural choice is already decided | Section 3 below + Confluence ADR space | [`docs/adr/README.md`](./docs/adr/README.md) & Confluence MCP |
+| Understand domain terms & bounded contexts | [`GLOSSARY.md`](./GLOSSARY.md) | Domain types & seam contracts |
+| Check if an architectural choice is already decided | Section 3 below + Confluence ADR space | [`docs/adr/README.md`](./docs/adr/README.md) & `node src/cli/factory.mjs verify` |
+| Inspect the Wayfinder decision map | [`docs/wayfinder/MAP-0001-software-factory-engine.md`](./docs/wayfinder/MAP-0001-software-factory-engine.md) | [`docs/rfc/RFC-0001-executable-software-factory-engine.md`](./docs/rfc/RFC-0001-executable-software-factory-engine.md) |
 | Propose a cross-team or breaking architecture change | [`docs/rfc/README.md`](./docs/rfc/README.md) | `@architect` / `/create-rfc` |
 | Check detailed code quality & smell rules | [`CODING_STANDARDS.md`](./CODING_STANDARDS.md) | `@pr-reviewer` / `/two-axis-review` |
 
@@ -45,19 +46,18 @@ All packages/modules enforce **Deep Module boundaries** (small public entry poin
 
 ## 3. Canonical ADR Registry (Bitbucket `CONTEXT.md` <-> Confluence Sync)
 
-> **Rule for Agents & Engineers:**
-> Before implementing any feature, check the table below and fetch the full Confluence page (or local mirror in `docs/adr/`) via MCP.
+> **Rule for Agents & Engineers (`ADR-0003`):**
+> Before implementing any `Medium [M]` or `Large [L]` feature, check the table below and fetch the full Confluence page (or local mirror in `docs/adr/`).
 > **If your feature requires a pattern, library, schema, or integration NOT covered below (or conflicts with an `accepted` ADR), you MUST halt implementation and run `@architect` (`/create-adr` or `/create-rfc`).**
 
 | ADR ID | Title | Status | Scope / Bounded Context | Confluence Page ID / URL | Local Mirror | Governing Jira Epic |
 |---|---|---|---|---|---|---|
-| **ADR-0000** | ADR-Driven Software Factory & Documentation Gate | `accepted` | All Repositories & Agents | `CONF-ADR-0000` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0000`) | [`docs/adr/0000-adr-driven-software-factory.md`](./docs/adr/0000-adr-driven-software-factory.md) | `ARCH-1` |
-| **ADR-0001** | Deep Module Boundaries & Entry-Point Encapsulation | `accepted` | All Code Modules (`src/*`) | `CONF-ADR-0001` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0001`) | [`docs/adr/template.md`](./docs/adr/template.md) | `ARCH-2` |
-| **ADR-0002** | Contract-First API Validation & RFC 7807 Errors | `accepted` | `src/api/` | `CONF-ADR-0002` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0002`) | `docs/adr/0002-api-contracts.md` | `ARCH-3` |
-| **ADR-0003** | Authentication, RBAC & Zero-Trust Boundary Checks | `accepted` | `src/api/`, `src/auth/` | `CONF-ADR-0003` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0003`) | `docs/adr/0003-auth-rbac.md` | `ARCH-4` |
-| **ADR-0004** | Domain State Management & Immutable Value Objects | `accepted` | `src/modules/` | `CONF-ADR-0004` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0004`) | `docs/adr/0004-domain-immutability.md` | `ARCH-5` |
-| **ADR-0005** | Persistence Repositories & Transactional Outbox | `accepted` | `src/storage/` | `CONF-ADR-0005` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0005`) | `docs/adr/0005-persistence-outbox.md` | `ARCH-6` |
-| **ADR-0006** | Structured Telemetry, Audit Logging & PII Redaction | `accepted` | `src/telemetry/` | `CONF-ADR-0006` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0006`) | `docs/adr/0006-telemetry-audit.md` | `ARCH-7` |
+| **ADR-0000** | ADR-Driven Software Factory & Mandatory Documentation Gate | `accepted` | All Repositories & Agents | `CONF-ADR-0000` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0000`) | [`docs/adr/0000-adr-driven-software-factory.md`](./docs/adr/0000-adr-driven-software-factory.md) | `ARCH-1` |
+| **ADR-0001** | Deep Module Boundaries & Single Entry-Point Encapsulation | `accepted` | `src/modules/*` | `CONF-ADR-0001` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0001`) | [`docs/adr/0001-deep-module-boundaries.md`](./docs/adr/0001-deep-module-boundaries.md) | `ARCH-2` |
+| **ADR-0002** | Adaptive Agent Sizing Classifier (`Small [S]` \| `Medium [M]` \| `Large [L]`) & Safety Escalation | `accepted` | `src/modules/sizing/`, `.github/` | `CONF-ADR-0002` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0002`) | [`docs/adr/0002-adaptive-agent-sizing-classifier.md`](./docs/adr/0002-adaptive-agent-sizing-classifier.md) | `ARCH-3` |
+| **ADR-0003** | Hybrid Living-Docs Governance (`CONTEXT.md` <-> Confluence MCP & Local ADR Parity) | `accepted` | `src/modules/governance/`, `docs/adr/` | `CONF-ADR-0003` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0003`) | [`docs/adr/0003-hybrid-adr-confluence-sync.md`](./docs/adr/0003-hybrid-adr-confluence-sync.md) | `ARCH-4` |
+| **ADR-0004** | Deterministic Zero-Dependency Governance CLI (`factory` Engine) | `accepted` | `src/cli/factory.mjs`, `scripts/` | `CONF-ADR-0004` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0004`) | [`docs/adr/0004-deterministic-governance-cli.md`](./docs/adr/0004-deterministic-governance-cli.md) | `ARCH-5` |
+| **ADR-0005** | Two-Axis Separate-Context PR Review & Merge Danger (`One-Way` vs `Two-Way Door`) Scoring | `accepted` | `src/modules/review/`, `CODING_STANDARDS.md` | `CONF-ADR-0005` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0005`) | [`docs/adr/0005-two-axis-review-and-merge-danger.md`](./docs/adr/0005-two-axis-review-and-merge-danger.md) | `ARCH-6` |
 
 ---
 
@@ -67,7 +67,7 @@ When a change is too large or cross-cutting for a single ADR, an **RFC** is crea
 
 | RFC ID | Title | Status | Target Modules | Confluence RFC Link | Local Mirror | Jira Epic |
 |---|---|---|---|---|---|---|
-| **RFC-0001** | [Template] Multi-Phase Architecture Evolution | `draft` | `src/*` | `CONF-RFC-0001` | [`docs/rfc/template.md`](./docs/rfc/template.md) | `PROJ-100` |
+| **RFC-0001** | Executable ADR-Governed Software Factory Engine & CLI | `approved` | `src/modules/*`, `src/cli/` | `CONF-RFC-0001` | [`docs/rfc/RFC-0001-executable-software-factory-engine.md`](./docs/rfc/RFC-0001-executable-software-factory-engine.md) | `ARCH-100` |
 
 ---
 
@@ -78,8 +78,8 @@ When a change is too large or cross-cutting for a single ADR, an **RFC** is crea
 
 | Removed Path or Pattern | Date Removed | Why Removed | Canonical Replacement | Governing ADR |
 |---|---|---|---|---|
-| Direct DB queries inside route handlers | 2026-10-01 | Violates seam locality & testability | Call deep module entry points in `src/modules/<domain>/index.*` | `ADR-0001`, `ADR-0005` |
-| Barrel `index.ts` re-exporting internal `lib/*` | 2026-10-15 | Exposes shallow internals to callers & tests | Expose only narrow root entry points | `ADR-0001` |
+| Direct cross-module imports into `/lib/` or `/internal/` | 2026-11-01 | Violates Deep Module seam locality & testability | Import strictly from `src/modules/<domain>/index.mjs` | `ADR-0001`, `ADR-0004` |
+| `export * from './lib/'` barrel re-exports in `index.mjs` | 2026-11-01 | Exposes shallow private internals to callers & tests | Export only named public seam functions in `index.mjs` | `ADR-0001` |
 
 ---
 

@@ -50,9 +50,12 @@ if [ "$SOURCE_DIR" != "$TARGET_DIR" ]; then
     fi
   done
 
-  # 3. Copy automation & verification scripts
+  # 3. Copy automation, CLI & verification scripts
   cp "$SOURCE_DIR/scripts/"*.sh "$TARGET_DIR/scripts/" 2>/dev/null || true
   chmod +x "$TARGET_DIR/scripts/"*.sh 2>/dev/null || true
+  mkdir -p "$TARGET_DIR/src/cli" "$TARGET_DIR/src/modules"
+  cp -R "$SOURCE_DIR/src/cli/"* "$TARGET_DIR/src/cli/" 2>/dev/null || true
+  cp -R "$SOURCE_DIR/src/modules/"* "$TARGET_DIR/src/modules/" 2>/dev/null || true
 fi
 
 # 4. Install Git Hooks (commit-msg and pre-push) if inside a git repository
