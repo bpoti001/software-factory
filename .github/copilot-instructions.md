@@ -51,22 +51,24 @@ Code must **never** be written or merged without corresponding documentation and
 
 ---
 
-## 4. The 4-Gate Feature Workflow (For `Medium [M]` & `Large [L]` Tasks)
+## 4. The 4-Gate Feature Workflow & GSD Framework Integration
 
-To prevent "slop" and architectural degradation over time, all `Medium [M]` and `Large [L]` features follow the **4-Gate Workflow** (`/feature-spec` and `@engineer`):
+To prevent "slop" and architectural degradation over time, all `Medium [M]` and `Large [L]` features follow the **4-Gate Workflow** (`/feature-spec` and `@engineer`), cleanly integrated with the **GSD (Get Shit Done) Framework** (`docs/agents/gsd-integration.md`):
 
-1. **Gate 1 — Product & Context Gate**:
+1. **Gate 1 — Product & Context Gate (GSD + Jira MCP)**:
    - Fetch the Jira ticket via Jira MCP (`jira_get_issue`).
+   - If GSD is active in `.planning/`, inspect `.planning/PROJECT.md` and `.planning/ROADMAP.md`.
    - Verify problem statement, user outcomes, and acceptance criteria.
-2. **Gate 2 — System Architecture & ADR Gate**:
+2. **Gate 2 — System Architecture & ADR Gate (Confluence MCP)**:
    - Check `CONTEXT.md` and Confluence ADRs via Confluence MCP.
-   - If out-of-bounds (`Large [L]`), halt and generate a **New ADR** (`/create-adr`) or **RFC** (`/create-rfc`).
-   - Define **Deep Modules** (Ousterhout): small public interfaces hiding substantial implementation at clean **seams**.
+   - If out-of-bounds (`Large [L]`), **HARD STOP GSD execution** and generate a **New ADR** (`/create-adr`) or **RFC** (`/create-rfc`).
+   - Define **Deep Modules** (Ousterhout): small public interfaces hiding substantial implementation at clean **seams** (`ADR-0001`).
 3. **Gate 3 — Program Design & Visual Alignment (`/show-me`)**:
    - Before writing implementation bodies, present the **smallest visual outline** (`file-tree diff`, `call-tree diff`, Mermaid sequence diagram, and exact TypeScript/Python/Java type signatures & interfaces without bodies).
-4. **Gate 4 — Vertical Tracer-Bullet Implementation (`/tdd`)**:
-   - Never build horizontally (all DB -> all Service -> all UI).
-   - Build in **vertical tracer-bullet slices** end-to-end through the highest seam using Red-Green-Refactor TDD.
+4. **Gate 4 — Vertical Tracer-Bullet Implementation (GSD Executor + `/tdd`)**:
+   - Execute phase plans (or invoke `/gsd-execute-phase --tdd`) in **vertical tracer-bullet slices** end-to-end through the highest seam using Red-Green-Refactor TDD.
+   - GSD's verification step triggers `./scripts/verify-governance.sh` via `.planning/config.json`.
+   - Hand off to `@pr-reviewer` (`/two-axis-review` + `/visual-pr`).
 
 ---
 

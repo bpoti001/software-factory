@@ -15,8 +15,9 @@ An enterprise agent harness for **VS Code GitHub Copilot**, **Jira**, **Confluen
    - [Workflow D: Code Reviewer & Tech Lead (`@pr-reviewer`)](#workflow-d-code-reviewer--tech-lead-pr-reviewer)
 5. [Master End-to-End System Flow](#master-end-to-end-system-flow)
 6. [The 4-Gate Governance Model](#the-4-gate-governance-model)
-7. [Repository Structure & File Catalog](#repository-structure--file-catalog)
-8. [Installed Agent Skills Reference](#installed-agent-skills-reference)
+7. [Integration with the GSD (Get Shit Done) Framework](#integration-with-the-gsd-get-shit-done-framework)
+8. [Repository Structure & File Catalog](#repository-structure--file-catalog)
+9. [Installed Agent Skills Reference](#installed-agent-skills-reference)
 
 ---
 
@@ -368,6 +369,61 @@ When generating PRs via `/visual-pr`, changes are evaluated across two safety di
    - **Two-Way Door (`Small [S]` / `Medium [M]`)**: Easily reversible changes behind feature flags, internal deep module implementations, or non-breaking UI adjustments.
 2. **Blast Radius**:
    - Classified as `Localized` (`Small [S]`), `Module-Wide` (`Medium [M]`), or `System-Wide` (`Large [L]`).
+
+---
+
+## Integration with the GSD (Get Shit Done) Framework
+
+This repository does **not** rebuild or duplicate GSD. Instead, it provides a clean, native integration bridge ([`docs/agents/gsd-integration.md`](docs/agents/gsd-integration.md)) between the **GSD Framework** (`~/.gemini/antigravity/gsd-core`) and the **ADR-Governed Software Factory**:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       GSD FRAMEWORK (Tactical Execution)                    │
+│  • Milestone & Phase Roadmapping (.planning/ROADMAP.md, STATE.md)           │
+│  • Phase Planning (/gsd-plan-phase) & Discussion (/gsd-discuss-phase)       │
+│  • Task Execution (/gsd-execute-phase) & Verification (/gsd-verify-work)    │
+│  • Codebase Reconnaissance & Research Stores (.planning/research/)          │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                         NATIVE INTEGRATION BRIDGE
+                                       │
+┌──────────────────────────────────────▼──────────────────────────────────────┐
+│                    SOFTWARE FACTORY (Strategic Governance)                  │
+│  • Master Context Map & Delete-Zone (CONTEXT.md, GLOSSARY.md)               │
+│  • Architectural Decision Records (Confluence ADRs <-> docs/adr/)           │
+│  • Adaptive Sizing Classifier ([S] Small, [M] Medium, [L] Large)            │
+│  • Hard Stop on Architectural Drift (@architect /create-adr /create-rfc)    │
+│  • Deep Module Seam & ADR Parity Gate (scripts/verify-governance.sh)        │
+│  • Separate-Context Two-Axis PR Review & Merge Danger (@pr-reviewer)        │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### The 4 Integration Touchpoints
+
+1. **State & Architecture Constitution (`CONTEXT.md` <-> `.planning/`)**:
+   - GSD manages phase roadmaps and plan waves in `.planning/`.
+   - `CONTEXT.md` provides the immutable architectural boundaries and Confluence ADR links.
+   - Every GSD phase plan (`.planning/phases/*/PLAN.md`) explicitly cites its governing `ADR-NNNN` from `CONTEXT.md`.
+2. **Automated Verification Hook (`.planning/config.json`)**:
+   - `./scripts/factory-init.sh` automatically configures GSD's `.planning/config.json` with:
+     ```json
+     {
+       "workflow": {
+         "code_review": true,
+         "code_review_command": "./scripts/verify-governance.sh"
+       },
+       "claude_md_path": "./AGENTS.md"
+     }
+     ```
+   - When GSD executes `/gsd-verify-work` or code review passes, it deterministically runs `./scripts/verify-governance.sh` to enforce Deep Module seams and ADR parity.
+3. **Adaptive Sizing & Drift Escalation**:
+   - `Small [S]` tasks run the zero-research fast-track or `/gsd-quick` (skipping full phase roadmaps).
+   - If a GSD phase plan requires a new library or schema outside existing ADRs, GSD **pauses execution (Hard Stop)** so `@architect` can mint the ADR on Confluence before code is written.
+4. **Phase Ship & Handoff to Two-Axis PR Review**:
+   - When a GSD phase completes (`/gsd-ship` or `/gsd-complete-milestone`), it hands off to `@pr-reviewer`:
+     - Runs `/two-axis-review` (Axis 1: Standards & ADRs; Axis 2: Jira Spec).
+     - Computes **Merge Danger** (`One-Way Door` vs. `Two-Way Door` + `Blast Radius`).
+     - Generates the complete Bitbucket `/visual-pr` summary.
 
 ---
 

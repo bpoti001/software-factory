@@ -28,17 +28,18 @@ The engineer invoked `/start`. Your job is to **eliminate all process friction**
 - Locate the file(s), apply the edit, run any fast unit/typecheck on the touched file, and verify `./scripts/verify-governance.sh`.
 
 ### 🟡 Size: MEDIUM (`[M]`) — Standard 4-Gate Feature (Within Existing ADRs)
-- State: *"🟡 Size: MEDIUM `[M]` — Running 4-Gate Feature Delivery within existing ADRs."*
-- **Gate 1 (Jira + Context)**: Extract the Jira key (from prompt or `git symbolic-ref --short HEAD`), fetch via `jira_get_issue`, and read `CONTEXT.md` + `GLOSSARY.md`.
+- State: *"🟡 Size: MEDIUM `[M]` — Running 4-Gate Feature Delivery within existing ADRs (GSD Integrated)."*
+- **Gate 1 (Jira + Context)**: Extract the Jira key (from prompt or `git symbolic-ref --short HEAD`), fetch via `jira_get_issue`, and read `CONTEXT.md` + `GLOSSARY.md` (and `.planning/STATE.md` if GSD is active).
 - **Gate 2 (ADR Check)**: Fetch the governing Confluence ADR (`confluence_get_page`) from `CONTEXT.md`. *(If the task conflicts with or falls outside existing ADRs, auto-escalate to **🔴 LARGE `[L]`**).*
 - **Gate 3 (`/show-me`)**: Present a compact 15-line Program Design Blueprint (file-tree diff + call-tree diff + public interface signatures).
-- **Gate 4 (`/tdd`)**: Implement via vertical Tracer-Bullet TDD at the module seam (`index.*`), then run `/two-axis-review` and `/visual-pr`.
+- **Gate 4 (`/tdd` / GSD Execute)**: Implement via vertical Tracer-Bullet TDD at the module seam (`index.*`) or run `/gsd-execute-phase --tdd`. Automatically verify `./scripts/verify-governance.sh` and hand off to `@pr-reviewer` (`/two-axis-review` and `/visual-pr`).
 
 ### 🔴 Size: LARGE (`[L]`) — Full Architecture Gate + ADR/RFC Escalation
 - State: *"🔴 Size: LARGE `[L]` — Architectural scope detected. Running ADR/RFC Gate + Full 4-Gate Pipeline."*
-- **Gate 1 (Deep Recon)**: Read `CONTEXT.md`, `GLOSSARY.md`, Jira Epic/Ticket (`jira_get_issue`), and all affected modules.
+- **Gate 1 (Deep Recon)**: Read `CONTEXT.md`, `GLOSSARY.md`, Jira Epic/Ticket (`jira_get_issue`), and inspect all affected modules (or review GSD `.planning/research/`).
 - **Gate 2 (HARD STOP — Mint ADR or RFC)**:
+  - If GSD is running a phase planning loop, **PAUSE GSD execution**.
   - **Single Bounded Decision (`/create-adr`)**: Draft `docs/adr/NNNN-*.md` -> publish to **Confluence MCP** (`confluence_create_page`) -> register in `CONTEXT.md`.
   - **Cross-Cutting / Multi-Module (`/create-rfc`)**: Draft `docs/rfc/RFC-NNNN-*.md` -> publish to **Confluence MCP** -> decompose into vertical **Tracer Bullet** sub-tickets in **Jira MCP** (`jira_create_issue`).
 - **Gate 3 (Full `/show-me`)**: Present full file-tree diff, Mermaid sequence diagram, and Deep Module boundary contracts.
-- **Gate 4 (Multi-Slice `/tdd` + Review)**: Implement vertical slices via TDD, co-update `CONTEXT.md` & `GLOSSARY.md`, and run `/two-axis-review`, `/visual-pr` (`One-Way Door`), and `/retro`.
+- **Gate 4 (Multi-Slice `/tdd` + Review)**: Execute plans via TDD (`/gsd-execute-phase`), co-update `CONTEXT.md` & `GLOSSARY.md`, and run `/two-axis-review`, `/visual-pr` (`One-Way Door`), and `/retro`.

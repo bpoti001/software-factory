@@ -97,6 +97,29 @@ EOF
   echo "  ✅ Installed Git hooks (auto-Jira commit tagging + pre-push ADR/seam check)"
 fi
 
+# 5. Integrate with GSD Framework (if installed at ~/.gemini/antigravity/gsd-core or in PATH)
+GSD_CORE_DIR="${GSD_CORE_DIR:-$HOME/.gemini/antigravity/gsd-core}"
+if [ -d "$GSD_CORE_DIR" ] || command -v gsd-tools >/dev/null 2>&1; then
+  mkdir -p "$TARGET_DIR/.planning"
+  GSD_CONFIG_FILE="$TARGET_DIR/.planning/config.json"
+  if [ ! -f "$GSD_CONFIG_FILE" ]; then
+    cat > "$GSD_CONFIG_FILE" << 'EOF'
+{
+  "workflow": {
+    "code_review": true,
+    "code_review_command": "./scripts/verify-governance.sh",
+    "plan_check": true,
+    "verifier": true
+  },
+  "claude_md_path": "./AGENTS.md"
+}
+EOF
+    echo "  🔗 Integrated with GSD Framework: Initialized .planning/config.json with code_review_command -> ./scripts/verify-governance.sh"
+  else
+    echo "  ℹ️  Found existing GSD .planning/config.json (preserving project settings)"
+  fi
+fi
+
 echo ""
 echo "🎉 Software Factory Ready!"
 echo "👉 Open VS Code in '$TARGET_DIR' and type '/start' in Copilot Chat (or press Cmd+Shift+P -> 'Tasks: Run Task')."
