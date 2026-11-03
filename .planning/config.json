@@ -1,0 +1,9 @@
+{
+  "workflow": {
+    "code_review": true,
+    "code_review_command": "./scripts/verify-governance.sh",
+    "plan_check": true,
+    "verifier": true
+  },
+  "claude_md_path": "./AGENTS.md"
+}

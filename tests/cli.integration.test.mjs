@@ -48,3 +48,22 @@ test('CLI Integration [ADR-0005]: factory pr-report outputs structured /visual-p
   assert.match(output, /ADR-0004/);
   assert.match(output, /Merge Danger Assessment/);
 });
+
+test('CLI Integration [ADR-0006]: factory gsd status and validate inspect .planning/ and verify ADR traceability', () => {
+  const jsonOutput = execFileSync(
+    process.execPath,
+    [cliPath, 'gsd', 'status', '--json'],
+    { encoding: 'utf8' }
+  );
+  const parsed = JSON.parse(jsonOutput);
+  assert.equal(parsed.planningInitialized, true);
+  assert.equal(parsed.adrAlignment.aligned, true);
+  assert.equal(parsed.roadmap.phase_count, 4);
+
+  const validateOutput = execFileSync(
+    process.execPath,
+    [cliPath, 'gsd', 'validate'],
+    { encoding: 'utf8' }
+  );
+  assert.match(validateOutput, /ADR Traceability Gate:\s+✅ ALIGNED/);
+});

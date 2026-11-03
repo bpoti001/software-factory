@@ -29,7 +29,8 @@ All packages/modules enforce **Deep Module boundaries** (small public entry poin
 | **Adaptive Sizing Module** | `src/modules/sizing/` | Classifies tasks into `Small [S]`, `Medium [M]`, or `Large [L]` with safety escalation via `src/modules/sizing/index.mjs` | `ADR-0001`, `ADR-0002` |
 | **Governance & Parity Module** | `src/modules/governance/` | Verifies Deep Module seams, structural drift, `CONTEXT.md` <-> `docs/adr/` parity, and Delete-Zone rules via `src/modules/governance/index.mjs` | `ADR-0001`, `ADR-0003`, `ADR-0004` |
 | **Two-Axis Review & Merge Danger Module** | `src/modules/review/` | Scores `One-Way` vs `Two-Way Door` Merge Danger + Blast Radius and formats `/visual-pr` Markdown via `src/modules/review/index.mjs` | `ADR-0001`, `ADR-0005` |
-| **Factory CLI & Git/CI Hooks** | `src/cli/factory.mjs`, `scripts/` | Zero-dependency CLI adapter (`size`, `verify`, `pr-report`) & repository bootstrap scripts | `ADR-0004` |
+| **GSD Framework Bridge Module** | `src/modules/gsd/`, `.planning/` | Adapter to `gsd-tools.cjs` & `.planning/` ADR traceability verifier via `src/modules/gsd/index.mjs` | `ADR-0001`, `ADR-0006` |
+| **Factory CLI & Git/CI Hooks** | `src/cli/factory.mjs`, `scripts/` | Zero-dependency CLI adapter (`size`, `verify`, `pr-report`, `gsd`) & repository bootstrap scripts | `ADR-0004`, `ADR-0006` |
 | **Agent & Governance Config** | `.github/`, `docs/adr/`, `docs/wayfinder/` | Copilot agents, slash prompts, ADRs, RFCs, Wayfinder maps, coding standards | `ADR-0000`, `ADR-0003` |
 
 ### Navigation Jump Table ("Where to Look")
@@ -58,6 +59,7 @@ All packages/modules enforce **Deep Module boundaries** (small public entry poin
 | **ADR-0003** | Hybrid Living-Docs Governance (`CONTEXT.md` <-> Confluence MCP & Local ADR Parity) | `accepted` | `src/modules/governance/`, `docs/adr/` | `CONF-ADR-0003` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0003`) | [`docs/adr/0003-hybrid-adr-confluence-sync.md`](./docs/adr/0003-hybrid-adr-confluence-sync.md) | `ARCH-4` |
 | **ADR-0004** | Deterministic Zero-Dependency Governance CLI (`factory` Engine) | `accepted` | `src/cli/factory.mjs`, `scripts/` | `CONF-ADR-0004` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0004`) | [`docs/adr/0004-deterministic-governance-cli.md`](./docs/adr/0004-deterministic-governance-cli.md) | `ARCH-5` |
 | **ADR-0005** | Two-Axis Separate-Context PR Review & Merge Danger (`One-Way` vs `Two-Way Door`) Scoring | `accepted` | `src/modules/review/`, `CODING_STANDARDS.md` | `CONF-ADR-0005` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0005`) | [`docs/adr/0005-two-axis-review-and-merge-danger.md`](./docs/adr/0005-two-axis-review-and-merge-danger.md) | `ARCH-6` |
+| **ADR-0006** | Native GSD Framework Bridge & `.planning/` ADR Traceability | `accepted` | `src/modules/gsd/`, `.planning/` | `CONF-ADR-0006` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0006`) | [`docs/adr/0006-gsd-native-execution-bridge.md`](./docs/adr/0006-gsd-native-execution-bridge.md) | `ARCH-7` |
 
 ---
 

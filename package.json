@@ -10,7 +10,8 @@
     "test": "node --test tests/*.test.mjs",
     "factory:size": "node ./src/cli/factory.mjs size",
     "factory:verify": "node ./src/cli/factory.mjs verify",
-    "factory:pr": "node ./src/cli/factory.mjs pr-report"
+    "factory:pr": "node ./src/cli/factory.mjs pr-report",
+    "factory:gsd": "node ./src/cli/factory.mjs gsd"
   },
   "engines": {
     "node": ">=18.0.0"

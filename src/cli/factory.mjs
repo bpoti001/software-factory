@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * Software Factory Executable CLI Adapter (`src/cli/factory.mjs`)
- * Governed by: ADR-0001, ADR-0002, ADR-0003, ADR-0004, ADR-0005
+ * Governed by: ADR-0001, ADR-0002, ADR-0003, ADR-0004, ADR-0005, ADR-0006
  *
  * Commands:
  *   node src/cli/factory.mjs size "<task description>" [--files f1,f2] [--size S|M|L] [--json]
  *   node src/cli/factory.mjs verify [--files f1,f2]
  *   node src/cli/factory.mjs pr-report [--title "..."] [--jira PROJ-123] [--adrs ADR-0001] [--files f1,f2]
+ *   node src/cli/factory.mjs gsd <status|validate> [--json]
  */
 
 import fs from 'node:fs';
@@ -15,6 +16,7 @@ import { execSync } from 'node:child_process';
 import { classifyTaskSize } from '../modules/sizing/index.mjs';
 import { verifyGovernance } from '../modules/governance/index.mjs';
 import { generateVisualPrBody } from '../modules/review/index.mjs';
+import { inspectGsdWorkspace } from '../modules/gsd/index.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 
@@ -152,8 +154,19 @@ function runVerifyCommand(args) {
     process.exit(1);
   }
 
+  const gsdRoadmapPath = path.join(repoRoot, '.planning', 'ROADMAP.md');
+  if (fs.existsSync(gsdRoadmapPath)) {
+    const gsdReport = inspectGsdWorkspace({ cwd: repoRoot });
+    if (!gsdReport.adrAlignment.aligned) {
+      for (const err of gsdReport.adrAlignment.errors) {
+        console.error(`❌ [GSD ADR Alignment Violation] ${err}`);
+      }
+      process.exit(1);
+    }
+  }
+
   console.log(
-    '✅ [Factory Gate Passed] Deep Module boundaries, CONTEXT.md <-> docs/adr/ parity, and ADR documentation gates verified.'
+    '✅ [Factory Gate Passed] Deep Module boundaries, CONTEXT.md <-> docs/adr/ parity, GSD .planning/ ADR traceability, and ADR documentation gates verified.'
   );
 }
 
@@ -180,6 +193,44 @@ function runPrReportCommand(args) {
   console.log(body);
 }
 
+function runGsdCommand(args) {
+  const action = args.find((a) => !a.startsWith('--')) || 'status';
+  const asJson = args.includes('--json');
+  const report = inspectGsdWorkspace({ cwd: repoRoot });
+
+  if (asJson) {
+    console.log(JSON.stringify(report, null, 2));
+    if (action === 'validate' && !report.adrAlignment.aligned) {
+      process.exit(1);
+    }
+    return;
+  }
+
+  console.log(`🚀 [GSD Native Bridge] Runtime: ${report.gsdRuntimeMode} (${report.paths.gsdToolsBin})`);
+  console.log(`   • .planning/ Initialized: ${report.planningInitialized ? 'YES' : 'NO'}`);
+  console.log(
+    `   • Roadmap Progress:       ${report.roadmap.completed_phases}/${report.roadmap.phase_count} phases complete (${report.roadmap.progress_percent}%)`
+  );
+  console.log(
+    `   • Active Phase:           Phase ${report.state.current_phase || 'N/A'} (${report.state.status || 'unknown'})`
+  );
+  console.log(
+    `   • Governed ADRs Cited:    ${report.adrAlignment.referencedAdrs.join(', ') || 'None'}`
+  );
+  console.log(
+    `   • ADR Traceability Gate:  ${report.adrAlignment.aligned ? '✅ ALIGNED' : '❌ DRIFT DETECTED'}`
+  );
+
+  if (!report.adrAlignment.aligned) {
+    for (const err of report.adrAlignment.errors) {
+      console.error(`   ❌ ${err}`);
+    }
+    if (action === 'validate') {
+      process.exit(1);
+    }
+  }
+}
+
 const [, , subcommand, ...restArgs] = process.argv;
 
 switch (subcommand) {
@@ -192,9 +243,12 @@ switch (subcommand) {
   case 'pr-report':
     runPrReportCommand(restArgs);
     break;
+  case 'gsd':
+    runGsdCommand(restArgs);
+    break;
   default:
     console.log(
-      'Usage: node src/cli/factory.mjs <size|verify|pr-report> [options]'
+      'Usage: node src/cli/factory.mjs <size|verify|pr-report|gsd> [options]'
     );
     process.exit(subcommand ? 1 : 0);
 }
