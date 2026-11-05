@@ -37,6 +37,7 @@ All packages/modules enforce **Deep Module boundaries** (small public entry poin
 
 | If you need to... | Go to... | Verify with... |
 |---|---|---|
+| Review product requirements & GSD phase traceability | [`docs/PRD.md`](./docs/PRD.md) | [`.planning/REQUIREMENTS.md`](./.planning/REQUIREMENTS.md) & `node src/cli/factory.mjs gsd validate` |
 | Understand domain terms & bounded contexts | [`GLOSSARY.md`](./GLOSSARY.md) | Domain types & seam contracts |
 | Check if an architectural choice is already decided | Section 3 below + Confluence ADR space | [`docs/adr/README.md`](./docs/adr/README.md) & `node src/cli/factory.mjs verify` |
 | Inspect the Wayfinder decision map | [`docs/wayfinder/MAP-0001-software-factory-engine.md`](./docs/wayfinder/MAP-0001-software-factory-engine.md) | [`docs/rfc/RFC-0001-executable-software-factory-engine.md`](./docs/rfc/RFC-0001-executable-software-factory-engine.md) |

@@ -10,6 +10,7 @@ Eliminate architectural drift and pull-request review bottlenecks by enforcing *
 
 ## Architecture & Governance Reference
 
+- **Product Requirements Document (PRD)**: [`docs/PRD.md`](../docs/PRD.md)
 - **Master Context & ADR Registry**: [`CONTEXT.md`](../CONTEXT.md)
 - **Ubiquitous Domain Language**: [`GLOSSARY.md`](../GLOSSARY.md)
 - **Separate-Context Review Standards**: [`CODING_STANDARDS.md`](../CODING_STANDARDS.md)
