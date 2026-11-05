@@ -1,0 +1,13 @@
+{
+  "receiptType": "CHECKPOINT_VERIFICATION_RECORDED",
+  "timestamp": "2026-11-05T23:45:56.581Z",
+  "treeHash": "1af306149c1ef437169e544e22a787d805a5459b",
+  "testExitCode": 0,
+  "command": "npm test && factory verify",
+  "governingAdrs": [
+    "ADR-0001",
+    "ADR-0006",
+    "ADR-0007"
+  ],
+  "signature": "a7ee7316f8beca5ce060b6513b44555dad4458caa0d936dfa41d90d8c4123122"
+}

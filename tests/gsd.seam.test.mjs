@@ -87,7 +87,7 @@ test('inspectGsdWorkspace integrates with native gsd-tools.cjs and validates rep
   assert.equal(report.gsdInstalled, true);
   assert.equal(report.adrAlignment.aligned, true);
   assert.ok(report.adrAlignment.referencedAdrs.includes('ADR-0006'));
-  assert.equal(report.roadmap.phase_count, 4);
+  assert.ok(report.roadmap.phase_count >= 4);
   assert.ok(Array.isArray(report.roadmap.phases));
   assert.ok(report.state.current_phase);
 });

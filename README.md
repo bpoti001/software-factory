@@ -523,17 +523,27 @@ All 43 agent skills reside in [`.agents/skills/`](.agents/skills/) and are symli
 Run the zero-dependency **Software Factory CLI Engine** (`src/cli/factory.mjs`) or seam test suite locally at any time:
 
 ```bash
-# 1. Classify any task into Small [S] / Medium [M] / Large [L] (with Safety Escalation)
-node src/cli/factory.mjs size "Change color of primary submit button to #2563EB" --files src/ui/Button.css
+# 1. Classify any task into S/M/L, Intent Profile, and Depth (with Safety Escalation)
+node src/cli/factory.mjs size "Fix the null pointer crash in user auth" --files src/modules/sizing/index.mjs
 
-# 2. Run deterministic ADR Parity, Deep Module Seam, Structural Drift & Delete-Zone checks
+# 2. Run deterministic ADR Parity, Deep Module Seam, Sensors & emit Verification Receipt
 ./scripts/verify-governance.sh
 # (or: node src/cli/factory.mjs verify)
 
-# 3. Generate a /visual-pr description with One-Way vs Two-Way Door Merge Danger scoring
-node src/cli/factory.mjs pr-report --title "feat(ARCH-100): Executable Factory Engine" --jira ARCH-100 --adrs ADR-0001,ADR-0002,ADR-0004,ADR-0005
+# 3. Discover brownfield repository practices, language runtime, and module seams
+node src/cli/factory.mjs discover
 
-# 4. Run all 17 Deep Module Seam & CLI Integration Tests (<200ms)
+# 4. Capture a learned rule with SHA-256 provenance hash (self-learning loop)
+node src/cli/factory.mjs learn "Always use SKU instead of Product in inventory domain types" --heading "Domain Naming"
+
+# 5. Check GSD roadmap and .planning/ ADR traceability
+node src/cli/factory.mjs gsd status
+node src/cli/factory.mjs gsd validate
+
+# 6. Generate a /visual-pr description with One-Way vs Two-Way Door Merge Danger scoring & Receipt check
+node src/cli/factory.mjs pr-report --title "feat(ARCH-100): Executable Factory Engine" --jira ARCH-100 --adrs ADR-0001,ADR-0007
+
+# 7. Run all 32 Deep Module Seam & CLI Integration Tests (<850ms)
 npm test
 ```
 
@@ -542,3 +552,5 @@ npm test
 2. **Structural Drift Gate (`ADR-0004`)**: If package manifests (`package.json`, `pom.xml`, etc.) or database schemas/migrations change without an accompanying update to `CONTEXT.md`, `docs/adr/`, or `docs/rfc/`, the build fails.
 3. **ADR Registry Parity (`ADR-0003`)**: Verifies that every `accepted` ADR row in `CONTEXT.md` Section 3 has a matching markdown file in `docs/adr/` and is indexed in `docs/adr/README.md`.
 4. **Delete-Zone Guard (`ADR-0001`)**: Scans changed files against deprecated patterns registered in Section 5 of `CONTEXT.md` (such as barrel `export * from './lib/'` re-exports) to prevent zombie code recreation.
+5. **Deterministic Artifact Sensors (`ADR-0007`)**: Verifies that ADRs contain all mandatory sections (`required-sections`), flags unverified placeholder assumptions (`claim-sources`), and confirms ADR code/test coverage (`traceability`).
+6. **Tool-Owned Verification Receipt (`ADR-0007`)**: Emits a tamper-evident, git tree-bound verification receipt (`.planning/VERIFICATION_RECEIPT.json`) proving tests executed cleanly on the exact tree being merged.

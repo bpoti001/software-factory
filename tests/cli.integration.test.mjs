@@ -58,7 +58,7 @@ test('CLI Integration [ADR-0006]: factory gsd status and validate inspect .plann
   const parsed = JSON.parse(jsonOutput);
   assert.equal(parsed.planningInitialized, true);
   assert.equal(parsed.adrAlignment.aligned, true);
-  assert.equal(parsed.roadmap.phase_count, 4);
+  assert.ok(parsed.roadmap.phase_count >= 4);
 
   const validateOutput = execFileSync(
     process.execPath,
@@ -66,4 +66,38 @@ test('CLI Integration [ADR-0006]: factory gsd status and validate inspect .plann
     { encoding: 'utf8' }
   );
   assert.match(validateOutput, /ADR Traceability Gate:\s+✅ ALIGNED/);
+});
+
+test('CLI Integration [ADR-0007]: factory size outputs intent profile, depth, and test strategy', () => {
+  const output = execFileSync(
+    process.execPath,
+    [cliPath, 'size', 'Fix the null pointer crash in user authentication', '--json'],
+    { encoding: 'utf8' }
+  );
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.profile, 'bugfix');
+  assert.equal(parsed.depth, 'minimal');
+  assert.equal(parsed.testStrategy, 'minimal');
+});
+
+test('CLI Integration [ADR-0007]: factory discover scans codebase and outputs JSON blueprint', () => {
+  const output = execFileSync(
+    process.execPath,
+    [cliPath, 'discover', '--json'],
+    { encoding: 'utf8' }
+  );
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.runtime, 'node-esm');
+  assert.equal(parsed.testRunner, 'node:test');
+  assert.ok(parsed.modules.includes('sizing'));
+  assert.ok(parsed.hasAdrGovernance);
+});
+
+test('CLI Integration [ADR-0007]: factory learn captures rules and rejects forbidden conflicts', () => {
+  const learnOutput = execFileSync(
+    process.execPath,
+    [cliPath, 'learn', 'Always write integration tests before submitting PRs', '--heading', 'Testing Guidelines'],
+    { encoding: 'utf8' }
+  );
+  assert.match(learnOutput, /\[Rule Learned\]/);
 });

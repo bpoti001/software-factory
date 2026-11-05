@@ -12,3 +12,4 @@
 | [ADR-0004](./0004-deterministic-governance-cli.md) | Deterministic Zero-Dependency Governance CLI (`factory` Engine) | `accepted` | 2026-11-02 | `CONF-ADR-0004` | `ARCH-5` |
 | [ADR-0005](./0005-two-axis-review-and-merge-danger.md) | Two-Axis Separate-Context PR Review & Merge Danger (`One-Way` vs `Two-Way Door`) Scoring | `accepted` | 2026-11-02 | `CONF-ADR-0005` | `ARCH-6` |
 | [ADR-0006](./0006-gsd-native-execution-bridge.md) | Native GSD Framework Bridge & `.planning/` ADR Traceability | `accepted` | 2026-11-03 | `CONF-ADR-0006` | `ARCH-7` |
+| [ADR-0007](./0007-aidlc-synthesis-architecture.md) | AI-DLC Synthesis Architecture (Intent Profiles, Sensors, Self-Learning Loop, and Verification Receipts) | `accepted` | 2026-11-05 | `CONF-ADR-0007` | `ARCH-8` |

@@ -10,6 +10,7 @@ Build and verify the complete ADR-Governed Software Factory across 4 GSD phasesâ
 - [x] **Phase 2: Governance, Seam & ADR Parity Engine** - Deterministic Deep Module seam, structural drift, Delete-Zone, and `CONTEXT.md` <-> `docs/adr/` parity verifier (`ADR-0001`, `ADR-0003`, `ADR-0004`)
 - [x] **Phase 3: Two-Axis Review & Merge Danger Engine** - `One-Way` vs. `Two-Way Door` scorer and `/visual-pr` Markdown generator (`ADR-0001`, `ADR-0005`)
 - [x] **Phase 4: Native GSD Framework Bridge & CLI** - `src/modules/gsd/index.mjs` adapter over `gsd-tools.cjs` and `.planning/` ADR traceability verifier (`ADR-0001`, `ADR-0006`) (completed 2026-11-03)
+- [x] **Phase 5: Amazon AI-DLC Synthesis Architecture & Capability Engine** - Intent profiles, deterministic sensors, self-learning loop, verification receipts, and brownfield discovery (`ADR-0001`, `ADR-0007`) (completed 2026-11-05)
 
 ## Phase Details
 
@@ -77,6 +78,25 @@ Plans:
 
 - [x] 04-01: Build and test `src/modules/gsd` Deep Module and `factory gsd` CLI subcommand (`tests/gsd.seam.test.mjs`)
 
+### Phase 5: Amazon AI-DLC Synthesis Architecture & Capability Engine
+
+**Goal**: Deliver AI-DLC capabilities: Intent Profiles in `src/modules/sizing`, Deterministic Sensors in `src/modules/sensors`, Self-Learning Rule Loop in `src/modules/learning`, Brownfield Discovery in `src/modules/discovery`, and Operations Gate in `src/modules/review`, governed by `ADR-0001` and `ADR-0007`.
+**Depends on**: Phase 4
+**Requirements**: [REQ-09, REQ-10, REQ-11]
+**Success Criteria** (what must be TRUE):
+
+  1. `classifyTaskSize` identifies Intent Profiles (`ui-tweak`, `bugfix`, `refactor`, `security-patch`, `infra`, `poc`, `feature`, `enterprise`) with orthogonal `depth` and `testStrategy`.
+  2. `runSensors` executes deterministic checks (`required-sections`, `traceability`, `claim-sources`, `receipt`) and catches missing sections or orphaned ADRs.
+  3. `recordLearnedRule` captures human corrections with SHA-256 provenance hashes and checks against org policies.
+  4. `factory verify` produces `.planning/VERIFICATION_RECEIPT.json` and `factory pr-report` verifies receipt binding and operations rollback plan for One-Way Doors.
+  5. `discoverPractices` analyzes brownfield repos and scaffolds initial governance.
+
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 05-01: Implement and test AI-DLC modules (sizing intent profiles, sensors, learning, discovery, operations gate, verification receipts) (`tests/aidlc.seam.test.mjs`)
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
@@ -85,3 +105,4 @@ Plans:
 | 2. Governance, Seam & ADR Parity Engine | 1/1 | Complete | 2026-11-02 |
 | 3. Two-Axis Review & Merge Danger Engine | 1/1 | Complete | 2026-11-02 |
 | 4. Native GSD Framework Bridge & CLI | 1/1 | Complete    | 2026-11-03 |
+| 5. Amazon AI-DLC Synthesis Architecture & Capability Engine | 1/1 | Complete    | 2026-11-05 |

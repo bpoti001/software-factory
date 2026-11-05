@@ -61,10 +61,18 @@ export function assessMergeDanger(input = {}) {
     blastRadius = 'Module-Wide';
   }
 
+  const operationsGateRequired = isOneWayDoor || blastRadius === 'System-Wide';
+  const hasRollbackPlan = Boolean(input.operationsRollbackText && input.operationsRollbackText.trim().length >= 10);
+  const operationsGate = Object.freeze({
+    required: operationsGateRequired,
+    passed: !operationsGateRequired || hasRollbackPlan,
+  });
+
   return Object.freeze({
     door,
     blastRadius,
     reasons: Object.freeze(reasons),
     requiresArchitectSignOff: isOneWayDoor || blastRadius === 'System-Wide',
+    operationsGate,
   });
 }

@@ -58,3 +58,10 @@ Even where a language linter passes, `@pr-reviewer` checks every diff hunk again
 10. **Message Chains**: Long `a.getB().getC().getD()` navigation coupling the caller to internal structure. → *Fix*: Hide the traversal behind the owning module's interface.
 11. **Middle Man**: A shallow class/module that does nothing but delegate every call to another object. → *Fix*: Fails the Deletion Test; inline or deepen.
 12. **Refused Bequest**: A subclass or adapter that ignores or throws `NotImplemented` for most of its interface. → *Fix*: Narrow the interface or replace inheritance with composition.
+
+## Testing Guidelines
+- Always write integration tests before submitting PRs (learned 2026-11-05) <!-- cid:469223572479d928 author:engineer -->
+- Always write integration tests before submitting PRs (learned 2026-11-05) <!-- cid:469223572479d928 author:engineer -->
+- Always write integration tests before submitting PRs (learned 2026-11-05) <!-- cid:469223572479d928 author:engineer -->
+
+- Always write integration tests before submitting PRs (learned 2026-11-05) <!-- cid:469223572479d928 author:engineer -->

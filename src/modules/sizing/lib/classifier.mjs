@@ -52,17 +52,53 @@ function findStructuralFiles(changedFiles) {
 }
 
 /**
+ * Infers task Intent Profile, depth, and test strategy from prompt and size (ADR-0007).
+ * @param {string} prompt
+ * @param {'S' | 'M' | 'L'} size
+ */
+function inferIntentProfile(prompt, size) {
+  if (/\b(cve-\d+|security|vulnerability|auth\s+bypass|sanitize|injection)\b/i.test(prompt)) {
+    return { profile: 'security-patch', depth: 'minimal', testStrategy: 'minimal' };
+  }
+  if (/\b(terraform|k8s|kubernetes|cloudwatch|ecs|ec2|docker|infra|infrastructure|iac|pipeline|deploy)\b/i.test(prompt)) {
+    return { profile: 'infra', depth: 'standard', testStrategy: 'standard' };
+  }
+  if (/\b(refactor|cleanup|clean\s+up|reorganize|rename\s+internal|deduplicate)\b/i.test(prompt)) {
+    return { profile: 'refactor', depth: 'minimal', testStrategy: 'minimal' };
+  }
+  if (/\b(fix|bug|crash|error|exception|regression|null\s+pointer|timeout)\b/i.test(prompt)) {
+    return { profile: 'bugfix', depth: 'minimal', testStrategy: 'minimal' };
+  }
+  if (/\b(poc|proof\s+of\s+concept|prototype|experiment)\b/i.test(prompt)) {
+    return { profile: 'poc', depth: 'minimal', testStrategy: 'minimal' };
+  }
+  if (size === 'S' || SMALL_PROMPT_KEYWORDS.test(prompt)) {
+    return { profile: 'ui-tweak', depth: 'minimal', testStrategy: 'minimal' };
+  }
+  if (size === 'L' || /\b(enterprise|compliance|audit|regulated)\b/i.test(prompt)) {
+    return { profile: 'enterprise', depth: 'comprehensive', testStrategy: 'comprehensive' };
+  }
+  return { profile: 'feature', depth: 'standard', testStrategy: 'standard' };
+}
+
+/**
  * Builds the immutable SizingDecision output for a chosen size.
  * @param {'S' | 'M' | 'L'} size
  * @param {'user-override' | 'auto-detected' | 'safety-escalated'} mode
  * @param {boolean} escalated
  * @param {string | null} escalationReason
+ * @param {string} prompt
  */
-function buildSizingDecision(size, mode, escalated, escalationReason) {
+function buildSizingDecision(size, mode, escalated, escalationReason, prompt = '') {
+  const intent = inferIntentProfile(prompt, size);
+
   if (size === 'S') {
     return Object.freeze({
       size: 'S',
       label: 'Small [S]',
+      profile: intent.profile,
+      depth: intent.depth,
+      testStrategy: intent.testStrategy,
       mode,
       escalated,
       escalationReason,
@@ -79,6 +115,9 @@ function buildSizingDecision(size, mode, escalated, escalationReason) {
     return Object.freeze({
       size: 'M',
       label: 'Medium [M]',
+      profile: intent.profile,
+      depth: intent.depth,
+      testStrategy: intent.testStrategy,
       mode,
       escalated,
       escalationReason,
@@ -94,6 +133,9 @@ function buildSizingDecision(size, mode, escalated, escalationReason) {
   return Object.freeze({
     size: 'L',
     label: 'Large [L]',
+    profile: intent.profile,
+    depth: intent.depth,
+    testStrategy: intent.testStrategy,
     mode,
     escalated,
     escalationReason,
@@ -128,23 +170,24 @@ export function classifyTaskSize(input = {}) {
       'L',
       'safety-escalated',
       true,
-      `Task requested Small [S] but modifies structural/architectural files (${structuralFiles.join(', ')}). Escalated to Large [L] per ADR-0002.`
+      `Task requested Small [S] but modifies structural/architectural files (${structuralFiles.join(', ')}). Escalated to Large [L] per ADR-0002.`,
+      prompt
     );
   }
 
   if (explicit) {
-    return buildSizingDecision(explicit, 'user-override', false, null);
+    return buildSizingDecision(explicit, 'user-override', false, null, prompt);
   }
 
   // Auto-Detection Mode:
   if (structuralFiles.length > 0 || LARGE_PROMPT_KEYWORDS.test(prompt)) {
-    return buildSizingDecision('L', 'auto-detected', false, null);
+    return buildSizingDecision('L', 'auto-detected', false, null, prompt);
   }
 
   const isSmallFileScope = changedFiles.length <= 2;
   if (isSmallFileScope && SMALL_PROMPT_KEYWORDS.test(prompt)) {
-    return buildSizingDecision('S', 'auto-detected', false, null);
+    return buildSizingDecision('S', 'auto-detected', false, null, prompt);
   }
 
-  return buildSizingDecision('M', 'auto-detected', false, null);
+  return buildSizingDecision('M', 'auto-detected', false, null, prompt);
 }
