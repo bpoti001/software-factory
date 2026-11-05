@@ -58,8 +58,8 @@ export function checkClaimSources(filesMap = {}) {
 
   for (const [filePath, content] of Object.entries(filesMap)) {
     if (typeof content !== 'string') continue;
-    // Skip test files from claim-sources placeholder scans
-    if (filePath.startsWith('tests/') || filePath.includes('.test.')) {
+    // Only scan markdown/planning documents, never code or test files
+    if (!filePath.endsWith('.md') || filePath.startsWith('tests/') || filePath.includes('.test.')) {
       continue;
     }
     const lines = content.split(/\r?\n/);
