@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
 
 const cliPath = path.resolve(import.meta.dirname, '../src/cli/factory.mjs');
 
@@ -94,10 +96,16 @@ test('CLI Integration [ADR-0007]: factory discover scans codebase and outputs JS
 });
 
 test('CLI Integration [ADR-0007]: factory learn captures rules and rejects forbidden conflicts', () => {
+  const tmpFile = path.join(os.tmpdir(), `test-standards-${Date.now()}.md`);
+  fs.writeFileSync(tmpFile, '# Standards\n', 'utf8');
+
   const learnOutput = execFileSync(
     process.execPath,
-    [cliPath, 'learn', 'Always write integration tests before submitting PRs', '--heading', 'Testing Guidelines'],
+    [cliPath, 'learn', 'Always write integration tests before submitting PRs', '--heading', 'Testing Guidelines', '--file', tmpFile],
     { encoding: 'utf8' }
   );
   assert.match(learnOutput, /\[Rule Learned\]/);
+  assert.match(fs.readFileSync(tmpFile, 'utf8'), /Always write integration tests/);
+
+  try { fs.unlinkSync(tmpFile); } catch {}
 });

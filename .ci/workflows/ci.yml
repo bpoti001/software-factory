@@ -1,0 +1,31 @@
+name: Software Factory CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  governance-and-test:
+    name: ADR Governance & Seam Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run Unit & Seam Test Suite
+        run: npm test
+
+      - name: Run Software Factory Governance Gate
+        run: |
+          chmod +x ./scripts/verify-governance.sh
+          ./scripts/verify-governance.sh

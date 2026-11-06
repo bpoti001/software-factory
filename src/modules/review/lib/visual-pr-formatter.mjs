@@ -32,6 +32,7 @@ export function generateVisualPrBody(input = {}) {
   const danger = assessMergeDanger({
     changedFiles,
     diffText: input.diffText,
+    operationsRollbackText: input.operationsRollbackText,
   });
 
   const fileTreeLines =
@@ -43,6 +44,10 @@ export function generateVisualPrBody(input = {}) {
     danger.reasons.length > 0
       ? danger.reasons.map((r) => `  - ${r}`).join('\n')
       : '  - Reversible localized/module change behind public seam';
+
+  const opsGateRow = danger.operationsGate.required
+    ? `\n| **Operations & Rollback Gate** | **\`${danger.operationsGate.passed ? '✅ VERIFIED' : '❌ MISSING ROLLBACK PLAN'}\`** | ${danger.operationsGate.passed ? 'Operational rollback procedure documented' : '⚠️ One-Way Door / System-Wide changes require an explicit rollback runbook'} |`
+    : '';
 
   return `## ${title}
 
@@ -65,7 +70,7 @@ ${fileTreeLines}
 | :--- | :--- | :--- |
 | **Door Type** | **\`${danger.door}\`** | ${danger.door === 'One-Way Door' ? '⚠️ High-consequence / hard-to-reverse change' : '✅ Immediately reversible via git revert'} |
 | **Blast Radius** | **\`${danger.blastRadius}\`** | Touches ${changedFiles.length} file(s) |
-| **Architect Sign-Off** | **\`${danger.requiresArchitectSignOff ? 'REQUIRED' : 'Optional (Standard Peer Review)'}\`** | Driven by Door & Blast Radius |
+| **Architect Sign-Off** | **\`${danger.requiresArchitectSignOff ? 'REQUIRED' : 'Optional (Standard Peer Review)'}\`** | Driven by Door & Blast Radius |${opsGateRow}
 
 **Classification Rationale**:
 ${reasonsList}

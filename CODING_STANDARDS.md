@@ -61,7 +61,3 @@ Even where a language linter passes, `@pr-reviewer` checks every diff hunk again
 
 ## Testing Guidelines
 - Always write integration tests before submitting PRs (learned 2026-11-05) <!-- cid:469223572479d928 author:engineer -->
-- Always write integration tests before submitting PRs (learned 2026-11-05) <!-- cid:469223572479d928 author:engineer -->
-- Always write integration tests before submitting PRs (learned 2026-11-05) <!-- cid:469223572479d928 author:engineer -->
-
-- Always write integration tests before submitting PRs (learned 2026-11-05) <!-- cid:469223572479d928 author:engineer -->

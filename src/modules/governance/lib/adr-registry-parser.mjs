@@ -91,5 +91,21 @@ export function checkAdrParity(input = {}) {
     }
   }
 
+  // Reverse check: every ADR markdown file on disk must be registered in CONTEXT.md
+  const registeredPaths = new Set(registry.map((r) => r.localMirrorPath));
+  for (const file of existingSet) {
+    if (/docs\/adr\/\d{4}-[a-zA-Z0-9._-]+\.md$/.test(file)) {
+      if (!registeredPaths.has(file)) {
+        violations.push(
+          Object.freeze({
+            adrId: file.match(/\d{4}/)?.[0] || 'ADR-????',
+            mirrorPath: file,
+            message: `Shadow ADR '${file}' exists on disk but is not registered in CONTEXT.md Section 3 (ADR-0003).`,
+          })
+        );
+      }
+    }
+  }
+
   return violations;
 }

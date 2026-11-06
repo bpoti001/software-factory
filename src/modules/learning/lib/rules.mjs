@@ -85,9 +85,10 @@ export function recordLearnedRule(options = {}) {
 
   fs.writeFileSync(targetFile, updated, 'utf8');
 
-  // Log audit event to .planning/learning/ if directory exists
-  const learningDir = path.join(cwd, '.planning', 'learning');
-  if (fs.existsSync(path.dirname(learningDir))) {
+  // Log audit event to .planning/learning/ if targetFile is within cwd
+  const isInsideCwd = !path.relative(cwd, targetFile).startsWith('..');
+  if (isInsideCwd) {
+    const learningDir = path.join(cwd, '.planning', 'learning');
     if (!fs.existsSync(learningDir)) {
       fs.mkdirSync(learningDir, { recursive: true });
     }

@@ -44,11 +44,29 @@ if [ "$SOURCE_DIR" != "$TARGET_DIR" ]; then
     fi
   done
 
-  for doc in docs/adr/README.md docs/adr/template.md docs/adr/0000-adr-driven-software-factory.md docs/rfc/README.md docs/rfc/template.md; do
-    if [ ! -f "$TARGET_DIR/$doc" ] && [ -f "$SOURCE_DIR/$doc" ]; then
-      cp "$SOURCE_DIR/$doc" "$TARGET_DIR/$doc"
+  for doc in "$SOURCE_DIR/docs/adr/"*.md "$SOURCE_DIR/docs/rfc/"*.md; do
+    base="$(basename "$doc")"
+    subdir="$(echo "$doc" | grep -o 'docs/[^/]*')"
+    mkdir -p "$TARGET_DIR/$subdir"
+    if [ ! -f "$TARGET_DIR/$subdir/$base" ]; then
+      cp "$doc" "$TARGET_DIR/$subdir/$base"
     fi
   done
+
+  # Initialize minimal package.json if absent so ESM and test runner work
+  if [ ! -f "$TARGET_DIR/package.json" ]; then
+    cat > "$TARGET_DIR/package.json" << 'EOF'
+{
+  "name": "target-project",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}
+EOF
+    echo "  ✅ Initialized package.json"
+  fi
 
   # 3. Copy automation, CLI & verification scripts
   cp "$SOURCE_DIR/scripts/"*.sh "$TARGET_DIR/scripts/" 2>/dev/null || true

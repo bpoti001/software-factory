@@ -9,28 +9,59 @@ const STRUCTURAL_MANIFEST_OR_SCHEMA =
 const GOVERNANCE_DOC_FILE = /^(CONTEXT\.md|GLOSSARY\.md|docs\/(adr|rfc)\/.*\.md)$/;
 
 /**
- * Checks whether structural files changed without accompanying ADR/RFC/CONTEXT.md updates.
+ * Checks whether structural files changed without accompanying ADR/RFC/CONTEXT.md updates,
+ * and ensures all touched Deep Modules are mapped in CONTEXT.md Section 2.
  * @param {string[]} changedFiles
+ * @param {string} [contextMarkdown]
  */
-export function checkStructuralDrift(changedFiles = []) {
+export function checkStructuralDrift(changedFiles = [], contextMarkdown = '') {
+  const violations = [];
+
   const structuralTriggers = changedFiles.filter((file) =>
     STRUCTURAL_MANIFEST_OR_SCHEMA.test(file)
   );
-  if (structuralTriggers.length === 0) {
-    return [];
-  }
 
   const hasGovernanceDocUpdate = changedFiles.some((file) => GOVERNANCE_DOC_FILE.test(file));
-  if (hasGovernanceDocUpdate) {
-    return [];
+
+  if (structuralTriggers.length > 0 && !hasGovernanceDocUpdate) {
+    for (const file of structuralTriggers) {
+      violations.push(
+        Object.freeze({
+          file,
+          message: `[Structural Drift] '${file}' was modified without a corresponding update to CONTEXT.md, docs/adr/, or docs/rfc/ (ADR-0000, ADR-0004).`,
+        })
+      );
+    }
   }
 
-  return structuralTriggers.map((file) =>
-    Object.freeze({
-      file,
-      message: `[Structural Drift] '${file}' was modified without a corresponding update to CONTEXT.md, docs/adr/, or docs/rfc/ (ADR-0000, ADR-0004).`,
-    })
-  );
+  // Module mapping check: every touched module in src/modules/<name>/ must be registered in CONTEXT.md
+  if (contextMarkdown && contextMarkdown.trim()) {
+    const touchedModules = new Set();
+    for (const file of changedFiles) {
+      const match = file.match(/^src\/modules\/([^/]+)\//);
+      if (match) {
+        touchedModules.add(match[1]);
+      }
+    }
+
+    for (const modName of touchedModules) {
+      const isMapped =
+        contextMarkdown.includes(`src/modules/${modName}/`) ||
+        contextMarkdown.includes(`**${modName} Module**`) ||
+        contextMarkdown.includes(`**${modName.charAt(0).toUpperCase() + modName.slice(1)} Module**`);
+
+      if (!isMapped) {
+        violations.push(
+          Object.freeze({
+            file: `src/modules/${modName}/`,
+            message: `[Structural Drift] Deep Module '${modName}' ('src/modules/${modName}/') was created or modified but is not mapped in CONTEXT.md Section 2 (ADR-0001, ADR-0004).`,
+          })
+        );
+      }
+    }
+  }
+
+  return violations;
 }
 
 /**

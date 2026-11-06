@@ -11,6 +11,7 @@ Build and verify the complete ADR-Governed Software Factory across 4 GSD phasesâ
 - [x] **Phase 3: Two-Axis Review & Merge Danger Engine** - `One-Way` vs. `Two-Way Door` scorer and `/visual-pr` Markdown generator (`ADR-0001`, `ADR-0005`)
 - [x] **Phase 4: Native GSD Framework Bridge & CLI** - `src/modules/gsd/index.mjs` adapter over `gsd-tools.cjs` and `.planning/` ADR traceability verifier (`ADR-0001`, `ADR-0006`) (completed 2026-11-03)
 - [x] **Phase 5: Amazon AI-DLC Synthesis Architecture & Capability Engine** - Intent profiles, deterministic sensors, self-learning loop, verification receipts, and brownfield discovery (`ADR-0001`, `ADR-0007`) (completed 2026-11-05)
+- [x] **Phase 6: Dogfooding Remediation & Enterprise Hardening** - Multi-line seam parser, git status -uall, two-way ADR parity, honest test verification receipts, test fixture isolation, and GitHub Actions CI (`ADR-0001`, `ADR-0003`, `ADR-0004`, `ADR-0005`, `ADR-0007`) (completed 2026-11-05)
 
 ## Phase Details
 
@@ -97,6 +98,26 @@ Plans:
 
 - [x] 05-01: Implement and test AI-DLC modules (sizing intent profiles, sensors, learning, discovery, operations gate, verification receipts) (`tests/aidlc.seam.test.mjs`)
 
+### Phase 6: Dogfooding Remediation & Enterprise Hardening
+
+**Goal**: Resolve all 18 blindspots exposed in dogfooding: multi-line and require() seam parser, git status -uall, two-way ADR parity, honest test verification receipts, test fixture isolation, and GitHub Actions CI, governed by `ADR-0001`, `ADR-0003`, `ADR-0004`, `ADR-0005`, and `ADR-0007`.
+**Depends on**: Phase 5
+**Requirements**: [REQ-12, REQ-13, REQ-14]
+**Success Criteria** (what must be TRUE):
+
+  1. Multi-line imports, CommonJS `require()`, and bare imports into private `/lib/` or `/internal/` are caught as Seam Violations.
+  2. Untracked files in newly created module directories are analyzed prior to commit (`git status -uall`).
+  3. `verifyGovernance` enforces two-way ADR parity (detects shadow ADRs on disk omitted from `CONTEXT.md`) and validates that all `src/modules/*` directories are mapped in `CONTEXT.md` Section 2.
+  4. `factory verify` executes `npm test` to capture real exit codes, binds receipts to tree hash, and ignores `.planning/VERIFICATION_RECEIPT.json` in git.
+  5. Integration tests use isolated temp directories, keeping `CODING_STANDARDS.md` pristine.
+  6. CI workflow template `.ci/workflows/ci.yml` is active and passing.
+
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 06-01: Implement remediation plan across governance, sizing, review, CLI, tests, and CI (`tests/remediation.seam.test.mjs`)
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
@@ -106,3 +127,4 @@ Plans:
 | 3. Two-Axis Review & Merge Danger Engine | 1/1 | Complete | 2026-11-02 |
 | 4. Native GSD Framework Bridge & CLI | 1/1 | Complete    | 2026-11-03 |
 | 5. Amazon AI-DLC Synthesis Architecture & Capability Engine | 1/1 | Complete    | 2026-11-05 |
+| 6. Dogfooding Remediation & Enterprise Hardening | 1/1 | Complete | 2026-11-05 |

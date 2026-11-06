@@ -143,17 +143,30 @@ function collectPlanMarkdowns(phasesDir, cwd) {
 
 function fallbackRoadmapAnalyze(roadmapMarkdown) {
   const phaseHeadingRegex = /^###\s+Phase\s+(\d+)\s*:\s*([^\n]+)/gm;
-  const phases = [...roadmapMarkdown.matchAll(phaseHeadingRegex)].map((m) => ({
-    number: m[1],
-    name: m[2].trim(),
-    disk_status: 'planned'
-  }));
+  const completedHeadingRegex = /^- \[x\] \*\*Phase\s+(\d+):/gm;
+  const completedMatches = [...roadmapMarkdown.matchAll(completedHeadingRegex)];
+  const completedNumbers = new Set(completedMatches.map((m) => m[1]));
+
+  const phases = [...roadmapMarkdown.matchAll(phaseHeadingRegex)].map((m) => {
+    const isCompleted = completedNumbers.has(m[1]);
+    return {
+      number: m[1],
+      name: m[2].trim(),
+      disk_status: isCompleted ? 'complete' : 'planned'
+    };
+  });
+
+  const count = phases.length;
+  const completedCount = phases.filter((p) => p.disk_status === 'complete').length;
+  const progressPercent = count > 0 ? Math.round((completedCount / count) * 100) : 0;
+  const activePhase = phases.find((p) => p.disk_status === 'planned')?.number || (count > 0 ? phases[count - 1].number : null);
+
   return {
     phases,
-    phase_count: phases.length,
-    completed_phases: phases.length,
-    progress_percent: 100,
-    current_phase: phases.length > 0 ? phases[phases.length - 1].number : null
+    phase_count: count,
+    completed_phases: completedCount,
+    progress_percent: progressPercent,
+    current_phase: activePhase
   };
 }
 

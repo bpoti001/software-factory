@@ -7,7 +7,13 @@ import { parseAdrRegistry, checkAdrParity } from './lib/adr-registry-parser.mjs'
 import { checkSeamViolations } from './lib/seam-checker.mjs';
 import { checkStructuralDrift, checkDeleteZoneViolations } from './lib/drift-checker.mjs';
 
-export { parseAdrRegistry };
+export {
+  parseAdrRegistry,
+  checkAdrParity,
+  checkSeamViolations,
+  checkStructuralDrift,
+  checkDeleteZoneViolations,
+};
 
 /**
  * Runs all deterministic Software Factory governance checks across changed files and living docs.
@@ -24,7 +30,7 @@ export function verifyGovernance(input = {}) {
   const fileContents = input.fileContents || {};
 
   const seamViolations = checkSeamViolations(changedFiles, fileContents);
-  const structuralDriftViolations = checkStructuralDrift(changedFiles);
+  const structuralDriftViolations = checkStructuralDrift(changedFiles, input.contextMarkdown);
   const adrParityViolations = checkAdrParity({
     contextMarkdown: input.contextMarkdown,
     adrReadmeMarkdown: input.adrReadmeMarkdown,

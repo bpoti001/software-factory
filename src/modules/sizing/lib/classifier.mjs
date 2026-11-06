@@ -10,8 +10,12 @@ const STRUCTURAL_FILE_PATTERNS = [
   /^docs\/(adr|rfc)\//i,
 ];
 
+const INTERFACE_FILE_PATTERNS = [
+  /(^|\/)src\/modules\/[^/]+\/index\.(mjs|cjs|js|ts)$/,
+];
+
 const LARGE_PROMPT_KEYWORDS =
-  /\b(new\s+(library|dependency|package|database|table|schema|migration|module|microservice)|migrate\s+to|redis|kafka|graphql|cross-module|rfc|create-adr|create-rfc|breaking\s+change)\b/i;
+  /\b(new\s+(library|dependency|package|database|table|schema|migration|module|microservice)|create\s+([a-z0-9_-]+\s+)?module|migrate\s+to|redis|kafka|graphql|cross-module|rfc|create-adr|create-rfc|breaking\s+change)\b/i;
 
 const SMALL_PROMPT_KEYWORDS =
   /\b(button\s+color|change\s+color|color\s+of|typo|spelling|copy\s+tweak|tooltip|padding|margin|font-size|css|style\s+tweak|rename\s+label|constant|timeout\s+value)\b/i;
@@ -163,14 +167,24 @@ export function classifyTaskSize(input = {}) {
   const structuralFiles = findStructuralFiles(changedFiles);
   const explicit = parseExplicitUserSize(prompt, input.explicitSize);
 
+  const interfaceFiles = changedFiles.filter((file) =>
+    INTERFACE_FILE_PATTERNS.some((pattern) => pattern.test(file))
+  );
+
   // Safety Escalation Guard (ADR-0002):
-  // If user requested Small [S], but touched package manifests, DB migrations, or ADR files, escalate to Large [L].
-  if (explicit === 'S' && structuralFiles.length > 0) {
+  // If user requested Small [S], but touched package manifests, DB migrations, ADR files, module interfaces,
+  // or prompt indicates architectural changes, escalate to Large [L].
+  if (
+    explicit === 'S' &&
+    (structuralFiles.length > 0 || interfaceFiles.length > 0 || LARGE_PROMPT_KEYWORDS.test(prompt))
+  ) {
+    const triggering = [...structuralFiles, ...interfaceFiles];
+    const triggerDetail = triggering.length > 0 ? ` (${triggering.join(', ')})` : '';
     return buildSizingDecision(
       'L',
       'safety-escalated',
       true,
-      `Task requested Small [S] but modifies structural/architectural files (${structuralFiles.join(', ')}). Escalated to Large [L] per ADR-0002.`,
+      `Task requested Small [S] but modifies structural/architectural files or interfaces${triggerDetail}. Escalated to Large [L] per ADR-0002.`,
       prompt
     );
   }

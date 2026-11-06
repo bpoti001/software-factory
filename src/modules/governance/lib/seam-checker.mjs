@@ -4,8 +4,8 @@
  */
 
 const CODE_FILE_EXT = /\.(mjs|cjs|js|ts|tsx|jsx|py|go|java)$/;
-const STATEMENT_IMPORT_REGEX =
-  /^\s*(?:import|export)\b[^'"\n]*?\bfrom\s+['"]([^'"]+)['"]|^\s*import\s*\(\s*['"]([^'"]+)['"]\s*\)/;
+const IMPORT_OR_REQUIRE_REGEX =
+  /(?:(?:import|export)\b[\s\S]*?\bfrom\s+['"]([^'"]+)['"]|import\s*\(\s*['"]([^'"]+)['"]\s*\)|require\s*\(\s*['"]([^'"]+)['"]\s*\)|^\s*import\s+['"]([^'"]+)['"])/gm;
 
 /**
  * Checks whether an import path crosses module boundaries into a private /lib/ or /internal/ directory.
@@ -54,23 +54,23 @@ export function checkSeamViolations(changedFiles = [], fileContents = {}) {
       continue;
     }
 
-    const lines = content.split(/\r?\n/);
-    lines.forEach((lineText, idx) => {
-      const match = STATEMENT_IMPORT_REGEX.exec(lineText);
-      if (match) {
-        const importPath = match[1] || match[2] || '';
-        if (isCrossModulePrivateImport(file, importPath)) {
-          violations.push(
-            Object.freeze({
-              file,
-              line: idx + 1,
-              importPath,
-              message: `[Seam Violation] '${file}:${idx + 1}' imports private '${importPath}' across module seams. Import only from the module's root index entry point (ADR-0001).`,
-            })
-          );
-        }
+    const regex = new RegExp(IMPORT_OR_REQUIRE_REGEX.source, 'gm');
+    let match;
+
+    while ((match = regex.exec(content)) !== null) {
+      const importPath = match[1] || match[2] || match[3] || match[4] || '';
+      if (isCrossModulePrivateImport(file, importPath)) {
+        const line = content.slice(0, match.index).split('\n').length;
+        violations.push(
+          Object.freeze({
+            file,
+            line,
+            importPath,
+            message: `[Seam Violation] '${file}:${line}' imports private '${importPath}' across module seams. Import only from the module's root index entry point (ADR-0001).`,
+          })
+        );
       }
-    });
+    }
   }
 
   return violations;

@@ -46,14 +46,14 @@ function getGitChangedFiles() {
     } catch {
       diffOutput = '';
     }
-    const statusOutput = execSync('git status --porcelain', {
+    const statusOutput = execSync('git status --porcelain -uall', {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     });
     const statusFiles = statusOutput
       .split(/\r?\n/)
-      .map((line) => line.trim().split(/\s+/).pop())
+      .map((line) => (line.length > 3 ? line.slice(3).trim() : ''))
       .filter(Boolean);
     const diffFiles = diffOutput
       .split(/\r?\n/)
@@ -190,12 +190,26 @@ function runVerifyCommand(args) {
     process.exit(1);
   }
 
-  // Emit tool-owned verification receipt (ADR-0007)
+  // Execute unit & seam test suite to ensure clean real exit code (ADR-0007)
+  let testExitCode = 0;
+  const pkgJsonPath = path.join(repoRoot, 'package.json');
+  if (fs.existsSync(pkgJsonPath)) {
+    try {
+      execSync('node --test tests/*.test.mjs', { cwd: repoRoot, stdio: 'inherit' });
+      testExitCode = 0;
+    } catch (err) {
+      testExitCode = err.status || 1;
+      console.error(`❌ [Test Suite Failure] Test runner exited with code ${testExitCode}.`);
+      process.exit(testExitCode);
+    }
+  }
+
+  // Emit tool-owned verification receipt bound to git tree (ADR-0007)
   let treeHash = 'uncommitted';
   try {
     treeHash = execSync('git rev-parse HEAD', { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   } catch {}
-  emitVerificationReceipt({ cwd: repoRoot, treeHash, testExitCode: 0 });
+  emitVerificationReceipt({ cwd: repoRoot, treeHash, testExitCode, command: 'node --test tests/*.test.mjs && factory verify' });
 
   console.log(
     '✅ [Factory Gate Passed] Deep Module boundaries, CONTEXT.md <-> docs/adr/ parity, Sensors, and GSD .planning/ ADR traceability verified.'
@@ -208,6 +222,7 @@ function runPrReportCommand(args) {
   const jiraKey = parseFlag(args, '--jira') || 'ARCH-100';
   const adrsArg = parseFlag(args, '--adrs');
   const filesArg = parseFlag(args, '--files');
+  const rollbackText = parseFlag(args, '--rollback') || parseFlag(args, '--operations-rollback') || '';
 
   const adrIds = adrsArg
     ? adrsArg.split(',').map((s) => s.trim()).filter(Boolean)
@@ -221,6 +236,7 @@ function runPrReportCommand(args) {
     jiraKey,
     adrIds,
     changedFiles,
+    operationsRollbackText: rollbackText,
   });
 
   console.log(body);
