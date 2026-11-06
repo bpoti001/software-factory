@@ -21,7 +21,17 @@ import { generateVisualPrBody } from '../modules/review/index.mjs';
 import { inspectGsdWorkspace } from '../modules/gsd/index.mjs';
 import { runSensors, emitVerificationReceipt, checkVerificationReceipt } from '../modules/sensors/index.mjs';
 import { recordLearnedRule, checkRuleConflict } from '../modules/learning/index.mjs';
-import { discoverPractices } from '../modules/discovery/index.mjs';
+import {
+  discoverPractices,
+  analyzeCodebase,
+  mineGitArchaeology,
+  synthesizeRetroAdrs,
+} from '../modules/discovery/index.mjs';
+import {
+  generateArchitectureVisuals,
+  generateArchitectureTour,
+  generateInteractiveExplorerHtml,
+} from '../modules/visualizer/index.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 
@@ -299,6 +309,115 @@ function runDiscoverCommand(args) {
   console.log(`   • GSD Planning Present:    ${practices.hasGsdPlanning ? 'YES' : 'NO'}`);
 }
 
+function writeVisualizationSuite(targetDir, outDirRel, analysis) {
+  const outDir = path.resolve(targetDir, outDirRel || 'docs/architecture');
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const visuals = generateArchitectureVisuals(analysis);
+  const tour = generateArchitectureTour(analysis);
+  const explorer = generateInteractiveExplorerHtml(analysis);
+
+  const visualsPath = path.join(outDir, 'VISUAL_ARCHITECTURE.md');
+  const tourPath = path.join(outDir, 'ARCHITECTURE_TOUR.md');
+  const explorerPath = path.join(outDir, 'explorer.html');
+
+  fs.writeFileSync(visualsPath, visuals.markdown, 'utf8');
+  fs.writeFileSync(tourPath, tour.markdown, 'utf8');
+  fs.writeFileSync(explorerPath, explorer.html, 'utf8');
+
+  return { outDir, visualsPath, tourPath, explorerPath };
+}
+
+function runAnalyzeCommand(args) {
+  const asJson = args.includes('--json');
+  const withVisualize = args.includes('--visualize');
+  const targetDir = path.resolve(parseFlag(args, '--cwd') || parseFlag(args, '--path') || repoRoot);
+  const outDirRel = parseFlag(args, '--out') || 'docs/architecture';
+
+  const xrayReport = analyzeCodebase({ cwd: targetDir });
+  const gitReport = mineGitArchaeology({ cwd: targetDir, xrayReport });
+  const retroAdrReport = synthesizeRetroAdrs({ cwd: targetDir, xrayReport, gitReport });
+  const analysis = { xrayReport, gitReport, retroAdrReport };
+
+  let writtenArtifacts = null;
+  if (withVisualize) {
+    writtenArtifacts = writeVisualizationSuite(targetDir, outDirRel, analysis);
+  }
+
+  if (asJson) {
+    console.log(JSON.stringify({ ...analysis, writtenArtifacts }, null, 2));
+    return;
+  }
+
+  console.log(`🏛️  [Brownfield Archaeology & X-Ray] Target: ${xrayReport.projectName} (${xrayReport.cwd})`);
+  console.log(`   • Runtime / Test Runner:     ${xrayReport.runtime} / ${xrayReport.testRunner}`);
+  console.log(`   • Layout Pattern:            ${xrayReport.layoutPattern}`);
+  console.log(`   • Codebase Scale:            ${xrayReport.totalFiles} files (${xrayReport.totalLines} lines)`);
+  console.log(
+    `   • Discovered Modules (${xrayReport.modules.length}):    ${xrayReport.modules.map((m) => `${m.name} [Depth ${m.depthRatio}]`).join(', ') || 'None'}`
+  );
+  console.log(`   • Cross-Module Edges:        ${xrayReport.edges.length} (${xrayReport.seamViolations.length} seam violation(s), ${xrayReport.circularDependencies.length} cycle(s))`);
+  console.log(`   • Git Commits Analyzed:      ${gitReport.totalCommitsAnalyzed} (${gitReport.epochs.length} epoch(s), ${gitReport.hotspots.length} hotspot(s))`);
+  console.log(
+    `   • Synthesized Retro-ADRs:    ${retroAdrReport.synthesizedAdrs.map((a) => `${a.adrId} (${a.status})`).join(', ')}`
+  );
+
+  if (writtenArtifacts) {
+    console.log(`   • Visual Blueprint Written:  ${path.relative(targetDir, writtenArtifacts.visualsPath)}`);
+    console.log(`   • Cognitive Tour Written:    ${path.relative(targetDir, writtenArtifacts.tourPath)}`);
+    console.log(`   • HTML Explorer Written:     ${path.relative(targetDir, writtenArtifacts.explorerPath)}`);
+  }
+}
+
+function runAdrSynthesizeCommand(args) {
+  const asJson = args.includes('--json');
+  const writeToDisk = args.includes('--write');
+  const targetDir = path.resolve(parseFlag(args, '--cwd') || parseFlag(args, '--path') || repoRoot);
+  const outDirRel = parseFlag(args, '--out') || 'docs/adr/synthesized';
+
+  const xrayReport = analyzeCodebase({ cwd: targetDir });
+  const gitReport = mineGitArchaeology({ cwd: targetDir, xrayReport });
+  const retroAdrReport = synthesizeRetroAdrs({
+    cwd: targetDir,
+    xrayReport,
+    gitReport,
+    writeFiles: writeToDisk,
+    outputDir: outDirRel,
+  });
+
+  if (asJson) {
+    console.log(JSON.stringify(retroAdrReport, null, 2));
+    return;
+  }
+
+  console.log(`📜 [Retro-ADR Synthesizer] Generated ${retroAdrReport.synthesizedAdrs.length} evidence-backed ADRs for ${xrayReport.projectName}:`);
+  for (const adr of retroAdrReport.synthesizedAdrs) {
+    console.log(`   • ${adr.adrId}: ${adr.title} [${adr.status} — ${Math.round(adr.adherenceRatio * 100)}%]`);
+  }
+  if (writeToDisk) {
+    console.log(`   ✅ Wrote synthesized ADR files to ${outDirRel}/`);
+  }
+}
+
+function runVisualizeCommand(args) {
+  const targetDir = path.resolve(parseFlag(args, '--cwd') || parseFlag(args, '--path') || repoRoot);
+  const outDirRel = parseFlag(args, '--out') || 'docs/architecture';
+
+  const xrayReport = analyzeCodebase({ cwd: targetDir });
+  const gitReport = mineGitArchaeology({ cwd: targetDir, xrayReport });
+  const retroAdrReport = synthesizeRetroAdrs({ cwd: targetDir, xrayReport, gitReport });
+  const written = writeVisualizationSuite(targetDir, outDirRel, {
+    xrayReport,
+    gitReport,
+    retroAdrReport,
+  });
+
+  console.log(`🎨 [Architecture Visualizer] Generated 5-Lens Visual Suite for ${xrayReport.projectName}:`);
+  console.log(`   • 5-Lens Mermaid Blueprint: ${path.relative(targetDir, written.visualsPath)}`);
+  console.log(`   • Cognitive Project Tour:   ${path.relative(targetDir, written.tourPath)}`);
+  console.log(`   • Interactive HTML Explorer: ${path.relative(targetDir, written.explorerPath)}`);
+}
+
 function runGsdCommand(args) {
   const action = args.find((a) => !a.startsWith('--')) || 'status';
   const asJson = args.includes('--json');
@@ -358,9 +477,18 @@ switch (subcommand) {
   case 'discover':
     runDiscoverCommand(restArgs);
     break;
+  case 'analyze':
+    runAnalyzeCommand(restArgs);
+    break;
+  case 'adr-synthesize':
+    runAdrSynthesizeCommand(restArgs);
+    break;
+  case 'visualize':
+    runVisualizeCommand(restArgs);
+    break;
   default:
     console.log(
-      'Usage: node src/cli/factory.mjs <size|verify|learn|discover|pr-report|gsd> [options]'
+      'Usage: node src/cli/factory.mjs <size|verify|learn|discover|analyze|adr-synthesize|visualize|pr-report|gsd> [options]'
     );
     process.exit(subcommand ? 1 : 0);
 }

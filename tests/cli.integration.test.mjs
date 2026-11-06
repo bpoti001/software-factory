@@ -109,3 +109,20 @@ test('CLI Integration [ADR-0007]: factory learn captures rules and rejects forbi
 
   try { fs.unlinkSync(tmpFile); } catch {}
 });
+
+test('CLI Integration [ADR-0008]: factory analyze --visualize generates X-Ray, Retro-ADRs, 5-Lens Mermaid, Tour, and HTML Explorer', () => {
+  const tmpOutDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-viz-'));
+  try {
+    const output = execFileSync(
+      process.execPath,
+      [cliPath, 'analyze', '--visualize', '--out', tmpOutDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(output, /\[Brownfield Archaeology & X-Ray\]/);
+    assert.ok(fs.existsSync(path.join(tmpOutDir, 'VISUAL_ARCHITECTURE.md')));
+    assert.ok(fs.existsSync(path.join(tmpOutDir, 'ARCHITECTURE_TOUR.md')));
+    assert.ok(fs.existsSync(path.join(tmpOutDir, 'explorer.html')));
+  } finally {
+    fs.rmSync(tmpOutDir, { recursive: true, force: true });
+  }
+});

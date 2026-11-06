@@ -30,10 +30,11 @@ All packages/modules enforce **Deep Module boundaries** (small public entry poin
 | **Governance & Parity Module** | `src/modules/governance/` | Verifies Deep Module seams, structural drift, `CONTEXT.md` <-> `docs/adr/` parity, and Delete-Zone rules via `src/modules/governance/index.mjs` | `ADR-0001`, `ADR-0003`, `ADR-0004` |
 | **Deterministic Sensors Module** | `src/modules/sensors/` | Pre-gate validation (`required-sections`, `traceability`, `claim-sources`, verification receipts) via `src/modules/sensors/index.mjs` | `ADR-0001`, `ADR-0007` |
 | **Self-Learning Rule Loop Module** | `src/modules/learning/` | Captures corrections into persistent rules with SHA-256 provenance hashes via `src/modules/learning/index.mjs` | `ADR-0001`, `ADR-0007` |
-| **Practices Discovery Module** | `src/modules/discovery/` | Scans brownfield repositories to infer architectures and scaffold governance via `src/modules/discovery/index.mjs` | `ADR-0001`, `ADR-0007` |
+| **Practices Discovery & Archaeology Module** | `src/modules/discovery/` | Scans brownfield repositories (`discoverPractices`, `analyzeCodebase`, `mineGitArchaeology`, `synthesizeRetroAdrs`) via `src/modules/discovery/index.mjs` | `ADR-0001`, `ADR-0007`, `ADR-0008` |
+| **Architecture Visualizer & Tour Module** | `src/modules/visualizer/` | Renders 5-lens Mermaid architecture diagrams, interactive HTML explorer, and cognitive `ARCHITECTURE_TOUR.md` via `src/modules/visualizer/index.mjs` | `ADR-0001`, `ADR-0008` |
 | **Two-Axis Review & Merge Danger Module** | `src/modules/review/` | Scores `One-Way` vs `Two-Way Door` Merge Danger + Blast Radius and formats `/visual-pr` Markdown via `src/modules/review/index.mjs` | `ADR-0001`, `ADR-0005`, `ADR-0007` |
 | **GSD Framework Bridge Module** | `src/modules/gsd/`, `.planning/` | Adapter to `gsd-tools.cjs` & `.planning/` ADR traceability verifier via `src/modules/gsd/index.mjs` | `ADR-0001`, `ADR-0006` |
-| **Factory CLI & Git/CI Hooks** | `src/cli/factory.mjs`, `scripts/` | Zero-dependency CLI adapter (`size`, `verify`, `learn`, `discover`, `pr-report`, `gsd`) & bootstrap scripts | `ADR-0004`, `ADR-0006`, `ADR-0007` |
+| **Factory CLI & Git/CI Hooks** | `src/cli/factory.mjs`, `scripts/` | Zero-dependency CLI adapter (`size`, `verify`, `learn`, `discover`, `analyze`, `adr-synthesize`, `visualize`, `pr-report`, `gsd`) & bootstrap scripts | `ADR-0004`, `ADR-0006`, `ADR-0007`, `ADR-0008` |
 | **Agent & Governance Config** | `.github/`, `docs/adr/`, `docs/wayfinder/` | Copilot agents, slash prompts, ADRs, RFCs, Wayfinder maps, coding standards | `ADR-0000`, `ADR-0003` |
 
 ### Navigation Jump Table ("Where to Look")
@@ -64,6 +65,7 @@ All packages/modules enforce **Deep Module boundaries** (small public entry poin
 | **ADR-0005** | Two-Axis Separate-Context PR Review & Merge Danger (`One-Way` vs `Two-Way Door`) Scoring | `accepted` | `src/modules/review/`, `CODING_STANDARDS.md` | `CONF-ADR-0005` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0005`) | [`docs/adr/0005-two-axis-review-and-merge-danger.md`](./docs/adr/0005-two-axis-review-and-merge-danger.md) | `ARCH-6` |
 | **ADR-0006** | Native GSD Framework Bridge & `.planning/` ADR Traceability | `accepted` | `src/modules/gsd/`, `.planning/` | `CONF-ADR-0006` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0006`) | [`docs/adr/0006-gsd-native-execution-bridge.md`](./docs/adr/0006-gsd-native-execution-bridge.md) | `ARCH-7` |
 | **ADR-0007** | AI-DLC Synthesis Architecture (Intent Profiles, Sensors, Self-Learning Loop, and Verification Receipts) | `accepted` | `src/modules/sizing/`, `src/modules/sensors/`, `src/modules/learning/`, `src/modules/discovery/`, `src/modules/review/` | `CONF-ADR-0007` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0007`) | [`docs/adr/0007-aidlc-synthesis-architecture.md`](./docs/adr/0007-aidlc-synthesis-architecture.md) | `ARCH-8` |
+| **ADR-0008** | Brownfield Architecture Archaeology, Evidence-Backed Retro-ADR Synthesis, and Multi-Layer Visual Intelligence | `accepted` | `src/modules/discovery/`, `src/modules/visualizer/`, `src/cli/factory.mjs` | `CONF-ADR-0008` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0008`) | [`docs/adr/0008-brownfield-archaeology-and-visualizer.md`](./docs/adr/0008-brownfield-archaeology-and-visualizer.md) | `ARCH-10` |
 
 ---
 

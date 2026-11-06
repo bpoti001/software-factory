@@ -12,6 +12,7 @@ Build and verify the complete ADR-Governed Software Factory across 4 GSD phasesâ
 - [x] **Phase 4: Native GSD Framework Bridge & CLI** - `src/modules/gsd/index.mjs` adapter over `gsd-tools.cjs` and `.planning/` ADR traceability verifier (`ADR-0001`, `ADR-0006`) (completed 2026-11-03)
 - [x] **Phase 5: Amazon AI-DLC Synthesis Architecture & Capability Engine** - Intent profiles, deterministic sensors, self-learning loop, verification receipts, and brownfield discovery (`ADR-0001`, `ADR-0007`) (completed 2026-11-05)
 - [x] **Phase 6: Dogfooding Remediation & Enterprise Hardening** - Multi-line seam parser, git status -uall, two-way ADR parity, honest test verification receipts, test fixture isolation, and GitHub Actions CI (`ADR-0001`, `ADR-0003`, `ADR-0004`, `ADR-0005`, `ADR-0007`) (completed 2026-11-05)
+- [x] **Phase 7: Brownfield Archaeology, Retro-ADR Synthesis & Visual Intelligence Engine** - Deep Codebase X-Ray, Git Archaeology, Evidence-Backed Retro-ADR Synthesizer, 5-Lens Architecture Visualizer, Interactive HTML Explorer, and Cognitive Tour (`ADR-0001`, `ADR-0007`, `ADR-0008`) (completed 2026-11-06)
 
 ## Phase Details
 
@@ -118,6 +119,25 @@ Plans:
 
 - [x] 06-01: Implement remediation plan across governance, sizing, review, CLI, tests, and CI (`tests/remediation.seam.test.mjs`)
 
+### Phase 7: Brownfield Archaeology, Retro-ADR Synthesis & Visual Intelligence Engine
+
+**Goal**: Deliver `DRD-01` through `DRD-06` governed by `ADR-0001`, `ADR-0007`, and `ADR-0008` across `src/modules/discovery/` (`analyzeCodebase`, `mineGitArchaeology`, `synthesizeRetroAdrs`), `src/modules/visualizer/` (`generateArchitectureVisuals`, `generateArchitectureTour`, `generateInteractiveExplorerHtml`), and `src/cli/factory.mjs` (`analyze`, `adr-synthesize`, `visualize`).
+**Depends on**: Phase 6
+**Requirements**: [DRD-01, DRD-02, DRD-03, DRD-04, DRD-05, DRD-06]
+**Success Criteria** (what must be TRUE):
+
+  1. `analyzeCodebase` builds a polyglot dependency graph, clusters modules, computes Module Depth Ratio, Fan-In, Fan-Out, Instability, circular dependencies, and cross-boundary seam leaks (`DRD-01`).
+  2. `mineGitArchaeology` extracts architectural epochs, hotspot churn crossed with Fan-In gravity (`One-Way Door` zones), temporal co-change coupling, and `Delete-Zone` candidates (`DRD-02`).
+  3. `synthesizeRetroAdrs` produces evidence-backed Retro-ADRs (`accepted`, `proposed`, `drift-detected`) that pass `runSensors` (`required-sections`, `claim-sources`, `traceability`) plus domain glossary terms (`DRD-03`).
+  4. `src/modules/visualizer/index.mjs` generates 5-lens Mermaid visual architecture blueprints (`VISUAL_ARCHITECTURE.md`), a cognitive `ARCHITECTURE_TOUR.md`, and a standalone interactive HTML dashboard (`explorer.html`) (`DRD-04`, `DRD-05`).
+  5. `factory analyze`, `factory adr-synthesize`, and `factory visualize` CLI commands execute end-to-end (`DRD-06`).
+
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 07-01: Build and verify Brownfield Archaeology, Retro-ADR Synthesis & Visual Intelligence Engine (`tests/archaeology-visualizer.seam.test.mjs`)
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
@@ -128,3 +148,4 @@ Plans:
 | 4. Native GSD Framework Bridge & CLI | 1/1 | Complete    | 2026-11-03 |
 | 5. Amazon AI-DLC Synthesis Architecture & Capability Engine | 1/1 | Complete    | 2026-11-05 |
 | 6. Dogfooding Remediation & Enterprise Hardening | 1/1 | Complete | 2026-11-05 |
+| 7. Brownfield Archaeology, Retro-ADR Synthesis & Visual Intelligence Engine | 1/1 | Complete | 2026-11-06 |
