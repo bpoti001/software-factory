@@ -10,6 +10,12 @@
     "test": "node --test tests/*.test.mjs",
     "factory:size": "node ./src/cli/factory.mjs size",
     "factory:verify": "node ./src/cli/factory.mjs verify",
+    "factory:sync": "node ./src/cli/factory.mjs sync",
+    "factory:add-module": "node ./src/cli/factory.mjs add-module",
+    "factory:add-adr": "node ./src/cli/factory.mjs add-adr",
+    "factory:scaffold-api": "node ./src/cli/factory.mjs scaffold-api",
+    "factory:analyze": "node ./src/cli/factory.mjs analyze",
+    "factory:visualize": "node ./src/cli/factory.mjs visualize",
     "factory:pr": "node ./src/cli/factory.mjs pr-report",
     "factory:gsd": "node ./src/cli/factory.mjs gsd"
   },

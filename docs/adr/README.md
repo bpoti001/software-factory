@@ -14,3 +14,4 @@
 | [ADR-0006](./0006-gsd-native-execution-bridge.md) | Native GSD Framework Bridge & `.planning/` ADR Traceability | `accepted` | 2026-11-03 | `CONF-ADR-0006` | `ARCH-7` |
 | [ADR-0007](./0007-aidlc-synthesis-architecture.md) | AI-DLC Synthesis Architecture (Intent Profiles, Sensors, Self-Learning Loop, and Verification Receipts) | `accepted` | 2026-11-05 | `CONF-ADR-0007` | `ARCH-8` |
 | [ADR-0008](./0008-brownfield-archaeology-and-visualizer.md) | Brownfield Architecture Archaeology, Evidence-Backed Retro-ADR Synthesis, and Multi-Layer Visual Intelligence | `accepted` | 2026-11-06 | `CONF-ADR-0008` | `ARCH-10` |
+| [ADR-0009](./0009-high-velocity-api-scaffolder-and-auto-sync.md) | High-Velocity API Service Scaffolder, Auto-Sync Living Docs, and Zero-Ceremony Module Generator | `accepted` | 2026-11-10 | `CONF-ADR-0009` | `ARCH-11` |

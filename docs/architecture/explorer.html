@@ -135,11 +135,11 @@
 
   <section class="kpi-grid">
     <div class="kpi-box">
-      <div class="kpi-value">8</div>
+      <div class="kpi-value">9</div>
       <div class="kpi-label">Bounded Modules</div>
     </div>
     <div class="kpi-box">
-      <div class="kpi-value">33 / 4753</div>
+      <div class="kpi-value">36 / 5723</div>
       <div class="kpi-label">Source Files / Lines</div>
     </div>
     <div class="kpi-box">
@@ -151,7 +151,7 @@
       <div class="kpi-label">Synthesized Retro-ADRs</div>
     </div>
     <div class="kpi-box">
-      <div class="kpi-value">9</div>
+      <div class="kpi-value">10</div>
       <div class="kpi-label">Git Commits Analyzed</div>
     </div>
   </section>
@@ -254,6 +254,24 @@
           <strong>Public Exports:</strong> <code class="sym">assessMergeDanger()</code> <code class="sym">generateVisualPrBody()</code>
         </div>
         <div class="adr-row"><span class="badge badge-adr">ADR-0000</span> <span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0003</span> <span class="badge badge-adr">ADR-0005</span> <span class="badge badge-adr">ADR-0007</span></div>
+      </div>
+
+      <div class="card module-card" data-module="scaffolder">
+        <div class="card-header">
+          <h3>📦 scaffolder</h3>
+          <span class="badge badge-ok">Depth Ratio: 158.5</span>
+        </div>
+        <p class="mono-path">Seam: src/modules/scaffolder/index.mjs</p>
+        <div class="metrics-row">
+          <span>Lines: <strong>653</strong> (634 hidden)</span>
+          <span>Fan-In: <strong>0</strong></span>
+          <span>Fan-Out: <strong>0</strong></span>
+          <span>Instability: <strong>0</strong></span>
+        </div>
+        <div class="exports-box">
+          <strong>Public Exports:</strong> <code class="sym">syncGovernanceDocs()</code> <code class="sym">scaffoldAdr()</code> <code class="sym">scaffoldDeepModule()</code> <code class="sym">scaffoldApiService()</code>
+        </div>
+        <div class="adr-row"><span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0004</span> <span class="badge badge-adr">ADR-0009</span></div>
       </div>
 
       <div class="card module-card" data-module="sensors">
@@ -426,44 +444,53 @@
       </tr>
 
       <tr>
-        <td><code>scripts/factory-init.sh</code></td>
-        <td>root</td>
-        <td>4</td>
-        <td>0</td>
-        <td><strong>4</strong></td>
-        <td><span class="badge badge-ok">Two-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>src/cli/factory.mjs</code></td>
-        <td>root</td>
-        <td>4</td>
-        <td>0</td>
-        <td><strong>4</strong></td>
-        <td><span class="badge badge-ok">Two-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>tests/cli.integration.test.mjs</code></td>
-        <td>root</td>
-        <td>4</td>
-        <td>0</td>
-        <td><strong>4</strong></td>
-        <td><span class="badge badge-ok">Two-Way Door</span></td>
-      </tr>
-
-      <tr>
         <td><code>CONTEXT.md</code></td>
         <td>root</td>
-        <td>4</td>
+        <td>5</td>
         <td>0</td>
-        <td><strong>4</strong></td>
+        <td><strong>5</strong></td>
         <td><span class="badge badge-danger">One-Way Door</span></td>
       </tr>
 
       <tr>
         <td><code>GLOSSARY.md</code></td>
         <td>root</td>
+        <td>5</td>
+        <td>0</td>
+        <td><strong>5</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>docs/adr/README.md</code></td>
+        <td>root</td>
+        <td>5</td>
+        <td>0</td>
+        <td><strong>5</strong></td>
+        <td><span class="badge badge-danger">One-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>src/cli/factory.mjs</code></td>
+        <td>root</td>
+        <td>5</td>
+        <td>0</td>
+        <td><strong>5</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>tests/cli.integration.test.mjs</code></td>
+        <td>root</td>
+        <td>5</td>
+        <td>0</td>
+        <td><strong>5</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>.planning/ROADMAP.md</code></td>
+        <td>root</td>
         <td>4</td>
         <td>0</td>
         <td><strong>4</strong></td>
@@ -471,20 +498,11 @@
       </tr>
 
       <tr>
-        <td><code>docs/adr/README.md</code></td>
+        <td><code>.planning/STATE.md</code></td>
         <td>root</td>
         <td>4</td>
         <td>0</td>
         <td><strong>4</strong></td>
-        <td><span class="badge badge-danger">One-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>.planning/ROADMAP.md</code></td>
-        <td>root</td>
-        <td>3</td>
-        <td>0</td>
-        <td><strong>3</strong></td>
         <td><span class="badge badge-ok">Two-Way Door</span></td>
       </tr>
     </tbody>

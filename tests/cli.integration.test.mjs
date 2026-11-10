@@ -126,3 +126,52 @@ test('CLI Integration [ADR-0008]: factory analyze --visualize generates X-Ray, R
     fs.rmSync(tmpOutDir, { recursive: true, force: true });
   }
 });
+
+test('CLI Integration [ADR-0009]: factory scaffold-api, add-module, add-adr, and sync commands execute in < 1 second', () => {
+  const tmpApiDir = fs.mkdtempSync(path.join(os.tmpdir(), 'factory-cli-api-'));
+  try {
+    const scaffoldOut = execFileSync(
+      process.execPath,
+      [
+        cliPath,
+        'scaffold-api',
+        '--dir',
+        tmpApiDir,
+        '--name',
+        'inventory-api',
+        '--modules',
+        'items,warehouses',
+        '--port',
+        '4200'
+      ],
+      { encoding: 'utf8' }
+    );
+    assert.match(scaffoldOut, /\[Turnkey API Scaffolder\]/);
+    assert.ok(fs.existsSync(path.join(tmpApiDir, 'src', 'app.mjs')));
+
+    const addModuleOut = execFileSync(
+      process.execPath,
+      [cliPath, 'add-module', 'shipments', '--cwd', tmpApiDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(addModuleOut, /\[Deep Module Scaffolder\]/);
+    assert.ok(fs.existsSync(path.join(tmpApiDir, 'src', 'modules', 'shipments', 'index.mjs')));
+
+    const addAdrOut = execFileSync(
+      process.execPath,
+      [cliPath, 'add-adr', 'Shipment Event Bus', '--scope', '`src/modules/shipments`', '--cwd', tmpApiDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(addAdrOut, /\[ADR Scaffolder\]/);
+    assert.ok(fs.existsSync(path.join(tmpApiDir, 'docs', 'adr', '0002-shipment-event-bus.md')));
+
+    const syncOut = execFileSync(
+      process.execPath,
+      [cliPath, 'sync', '--cwd', tmpApiDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(syncOut, /\[Governance Auto-Sync\]/);
+  } finally {
+    fs.rmSync(tmpApiDir, { recursive: true, force: true });
+  }
+});

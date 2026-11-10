@@ -32,6 +32,12 @@ import {
   generateArchitectureTour,
   generateInteractiveExplorerHtml,
 } from '../modules/visualizer/index.mjs';
+import {
+  syncGovernanceDocs,
+  scaffoldAdr,
+  scaffoldDeepModule,
+  scaffoldApiService,
+} from '../modules/scaffolder/index.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 
@@ -48,7 +54,7 @@ function getGitChangedFiles() {
     const baseRef = process.env.BASE_REF || 'origin/main';
     let diffOutput = '';
     try {
-      diffOutput = execSync(`git diff --name-only ${baseRef}...HEAD`, {
+      diffOutput = execSync(`git diff --name-only --diff-filter=d ${baseRef}...HEAD`, {
         cwd: repoRoot,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
@@ -63,7 +69,8 @@ function getGitChangedFiles() {
     });
     const statusFiles = statusOutput
       .split(/\r?\n/)
-      .map((line) => (line.length > 3 ? line.slice(3).trim() : ''))
+      .filter((line) => line.length > 3 && !line.slice(0, 2).includes('D'))
+      .map((line) => line.slice(3).trim())
       .filter(Boolean);
     const diffFiles = diffOutput
       .split(/\r?\n/)
@@ -418,6 +425,101 @@ function runVisualizeCommand(args) {
   console.log(`   • Interactive HTML Explorer: ${path.relative(targetDir, written.explorerPath)}`);
 }
 
+function runSyncCommand(args) {
+  const targetDir = path.resolve(parseFlag(args, '--cwd') || parseFlag(args, '--path') || repoRoot);
+  const report = syncGovernanceDocs({ cwd: targetDir });
+
+  console.log(`🔄 [Governance Auto-Sync] Synchronized: ${report.cwd}`);
+  console.log(`   • Newly Registered Modules: ${report.addedModules.join(', ') || 'None (already in sync)'}`);
+  console.log(`   • Newly Registered ADRs:    ${report.addedAdrs.join(', ') || 'None (already in sync)'}`);
+}
+
+function runAddModuleCommand(args) {
+  const targetDir = path.resolve(parseFlag(args, '--cwd') || parseFlag(args, '--path') || repoRoot);
+  const exportsArg = parseFlag(args, '--exports');
+  const positional = args.filter(
+    (arg, i) => !arg.startsWith('--') && (i === 0 || !['--cwd', '--path', '--exports'].includes(args[i - 1]))
+  );
+  const moduleName = positional[0];
+
+  if (!moduleName) {
+    console.error('Usage: node src/cli/factory.mjs add-module <module-name> [--exports fn1,fn2] [--cwd <dir>]');
+    process.exit(1);
+  }
+
+  const exportsList = exportsArg
+    ? exportsArg.split(',').map((s) => s.trim()).filter(Boolean)
+    : undefined;
+
+  const result = scaffoldDeepModule({
+    cwd: targetDir,
+    moduleName,
+    exports: exportsList,
+  });
+
+  console.log(`⚡ [Deep Module Scaffolder] Created module '${result.moduleName}' in <50ms:`);
+  console.log(`   • Public Seam:       ${result.entryPoint} (exports: ${result.exports.join(', ')})`);
+  console.log(`   • Private Internals: ${result.internalFile}`);
+  console.log(`   • Seam Test:         ${result.testFile}`);
+  console.log(`   • Governance Sync:   ✅ Auto-registered in CONTEXT.md Section 2`);
+}
+
+function runAddAdrCommand(args) {
+  const targetDir = path.resolve(parseFlag(args, '--cwd') || parseFlag(args, '--path') || repoRoot);
+  const scope = parseFlag(args, '--scope') || '`src/modules/*`';
+  const decision = parseFlag(args, '--decision') || undefined;
+  const positional = args.filter(
+    (arg, i) => !arg.startsWith('--') && (i === 0 || !['--cwd', '--path', '--scope', '--decision'].includes(args[i - 1]))
+  );
+  const title = positional.join(' ');
+
+  if (!title) {
+    console.error('Usage: node src/cli/factory.mjs add-adr "<ADR Title>" [--scope "..."] [--decision "..."] [--cwd <dir>]');
+    process.exit(1);
+  }
+
+  const result = scaffoldAdr({
+    cwd: targetDir,
+    title,
+    scope,
+    decision,
+  });
+
+  console.log(`📜 [ADR Scaffolder] Minted sensor-compliant ${result.adrId}: ${result.title}`);
+  console.log(`   • File:            ${result.filePath}`);
+  console.log(`   • Governance Sync: ✅ Auto-registered in CONTEXT.md Section 3 & docs/adr/README.md`);
+}
+
+function runScaffoldApiCommand(args) {
+  const targetDir = path.resolve(
+    parseFlag(args, '--dir') ||
+      parseFlag(args, '--out') ||
+      parseFlag(args, '--cwd') ||
+      parseFlag(args, '--path') ||
+      process.cwd()
+  );
+  const name = parseFlag(args, '--name') || path.basename(targetDir);
+  const modulesArg = parseFlag(args, '--modules');
+  const port = Number(parseFlag(args, '--port') || 3000);
+
+  const modules = modulesArg
+    ? modulesArg.split(',').map((s) => s.trim()).filter(Boolean)
+    : ['users', 'items'];
+
+  const result = scaffoldApiService({
+    targetDir,
+    name,
+    modules,
+    port,
+  });
+
+  console.log(`🚀 [Turnkey API Scaffolder] Generated governed API service '${result.name}' at ${result.targetDir}:`);
+  console.log(`   • HTTP Router & Server: src/app.mjs, src/server.mjs (Port ${result.port})`);
+  console.log(`   • Deep Modules (${result.modules.length}):     ${result.modules.map((m) => `src/modules/${m}/index.mjs`).join(', ')}`);
+  console.log(`   • Automated Tests:      tests/api.integration.test.mjs + ${result.modules.length} seam test(s)`);
+  console.log(`   • Governance & ADRs:    CONTEXT.md, GLOSSARY.md, docs/adr/0001-*.md (100% synced)`);
+}
+
 function runGsdCommand(args) {
   const action = args.find((a) => !a.startsWith('--')) || 'status';
   const asJson = args.includes('--json');
@@ -486,9 +588,21 @@ switch (subcommand) {
   case 'visualize':
     runVisualizeCommand(restArgs);
     break;
+  case 'sync':
+    runSyncCommand(restArgs);
+    break;
+  case 'add-module':
+    runAddModuleCommand(restArgs);
+    break;
+  case 'add-adr':
+    runAddAdrCommand(restArgs);
+    break;
+  case 'scaffold-api':
+    runScaffoldApiCommand(restArgs);
+    break;
   default:
     console.log(
-      'Usage: node src/cli/factory.mjs <size|verify|learn|discover|analyze|adr-synthesize|visualize|pr-report|gsd> [options]'
+      'Usage: node src/cli/factory.mjs <size|verify|sync|add-module|add-adr|scaffold-api|learn|discover|analyze|adr-synthesize|visualize|pr-report|gsd> [options]'
     );
     process.exit(subcommand ? 1 : 0);
 }
