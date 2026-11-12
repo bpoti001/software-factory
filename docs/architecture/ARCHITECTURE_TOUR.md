@@ -7,7 +7,7 @@
 
 ## 1. The 60-Second Mental Model & Core Metaphor
 
-Imagine **`adr-governed-software-factory`** as a coordinated network of **9 encapsulated bounded contexts** running on **`node-esm`** (36 files, 5723 lines of code) organized under a **`deep-modules`** architecture:
+Imagine **`adr-governed-software-factory`** as a coordinated network of **9 encapsulated bounded contexts** running on **`node-esm`** (38 files, 6359 lines of code) organized under a **`deep-modules`** architecture:
 
 - **How to Picture It**: Instead of a tangled monolith where any file can mutate any other file, each subsystem in `adr-governed-software-factory` acts as a **Deep Module** (`ADR-0001`). Callers interact strictly through narrow front doors (`index.*`), while complex algorithms, parsers, and domain rules live inside private `lib/` rooms behind the seam.
 - **Delivery & Persistence**: External callers invoke the system via **`cli`**, while state is governed via **`Living Documentation & Deterministic JSON Artifacts`**.
@@ -44,10 +44,10 @@ Below is the complete inventory of subsystems currently built and active in `adr
   - **Coupling Profile**: Fan-In `0` (dependents) | Fan-Out `0` (dependencies) | Instability `0`
   - **Governing ADRs**: `ADR-0000`, `ADR-0001`, `ADR-0003`, `ADR-0005`, `ADR-0007`
 - **`scaffolder` Module (`src/modules/scaffolder`)**:
-  - **Public Seam**: `src/modules/scaffolder/index.mjs` -> exports `syncGovernanceDocs()`, `scaffoldAdr()`, `scaffoldDeepModule()`, `scaffoldApiService()`
-  - **Encapsulation Depth**: 653 total lines (634 hidden inside 1 internal file(s); **Depth Ratio: 158.5**)
+  - **Public Seam**: `src/modules/scaffolder/index.mjs` -> exports `syncGovernanceDocs()`, `scaffoldAdr()`, `scaffoldDeepModule()`, `writeApiRouter()`, `initFoundrySpec()`, `validateFoundrySpec()`, `compileFoundrySpec()`, `verifySpecParity()`, `scaffoldApiService()`
+  - **Encapsulation Depth**: 1150 total lines (1123 hidden inside 3 internal file(s); **Depth Ratio: 124.78**)
   - **Coupling Profile**: Fan-In `0` (dependents) | Fan-Out `0` (dependencies) | Instability `0`
-  - **Governing ADRs**: `ADR-0001`, `ADR-0004`, `ADR-0009`
+  - **Governing ADRs**: `ADR-0001`, `ADR-0003`, `ADR-0004`, `ADR-0009`
 - **`sensors` Module (`src/modules/sensors`)**:
   - **Public Seam**: `src/modules/sensors/index.mjs` -> exports `runSensors()`, `checkRequiredSections()`, `checkClaimSources()`, `checkTraceability()`, `emitVerificationReceipt()`, `checkVerificationReceipt()`
   - **Encapsulation Depth**: 249 total lines (235 hidden inside 1 internal file(s); **Depth Ratio: 39.17**)
@@ -89,13 +89,13 @@ When a command or request enters `adr-governed-software-factory`, execution flow
 - **`ADR-0004` (Expose Capabilities via CLI Transport Adapter)** — Status: `accepted` (100% adherence)
 - **`ADR-0005` (Enforce Public Seam Testing via node:test and Automated CI Gates)** — Status: `accepted` (100% adherence)
 
-### Key Historical Epochs from Git Archaeology (10 commits analyzed)
+### Key Historical Epochs from Git Archaeology (11 commits analyzed)
+- `2026-11-10` [`44f5659`] (**architecture-adr**): feat(ARCH-11): Phase 8 High-Velocity API Service Scaffolder & Auto-Sync Governance Engine (ADR-0009)
 - `2026-11-06` [`d8d0032`] (**architecture-adr**): feat(ARCH-10): Phase 7 Brownfield Archaeology, Retro-ADR Synthesis & Visual Intelligence Engine (ADR-0008)
 - `2026-11-05` [`128172c`] (**module-seam-evolution**): feat(ARCH-9): Phase 6 Dogfooding Remediation & Enterprise Hardening
 - `2026-11-05` [`2434075`] (**governance-hardening**): fix(sensors): scope claim-sources sensor strictly to markdown documents
 - `2026-11-05` [`6888157`] (**architecture-adr**): feat(ARCH-8): synthesize Amazon AI-DLC capabilities into Software Factory (ADR-0007)
 - `2026-11-03` [`1af3061`] (**architecture-adr**): feat(ARCH-7): rebuild and wire Software Factory through native GSD Framework (ADR-0006)
-- `2026-11-03` [`457d4ab`] (**feature-slice**): feat: integrate Software Factory with existing GSD framework via config bridge and ADR gates
 
 ---
 
@@ -106,11 +106,11 @@ When a command or request enters `adr-governed-software-factory`, execution flow
 - Write public-seam tests in `tests/<domain>.seam.test.mjs` using `node:test` without importing private `/lib/` files.
 
 ### High-Gravity One-Way Door Zones (Require ADR/RFC & Rollback Plan)
+- **`CONTEXT.md`** (Module: `root`, Gravity Score: `6`, Fan-In: `0`)
+- **`docs/adr/README.md`** (Module: `root`, Gravity Score: `6`, Fan-In: `0`)
 - **`src/modules/governance/index.mjs`** (Module: `governance`, Gravity Score: `6`, Fan-In: `2`)
 - **`src/modules/governance/lib/adr-registry-parser.mjs`** (Module: `governance`, Gravity Score: `6`, Fan-In: `2`)
 - **`src/modules/governance/lib/drift-checker.mjs`** (Module: `governance`, Gravity Score: `6`, Fan-In: `2`)
-- **`src/modules/governance/lib/seam-checker.mjs`** (Module: `governance`, Gravity Score: `6`, Fan-In: `2`)
-- **`CONTEXT.md`** (Module: `root`, Gravity Score: `5`, Fan-In: `0`)
 
 ### Delete-Zone & Anti-Patterns to Never Copy
 - Never import private `/lib/` or `/internal/` files across module boundaries (`ADR-0001`).

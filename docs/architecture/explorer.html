@@ -139,7 +139,7 @@
       <div class="kpi-label">Bounded Modules</div>
     </div>
     <div class="kpi-box">
-      <div class="kpi-value">36 / 5723</div>
+      <div class="kpi-value">38 / 6359</div>
       <div class="kpi-label">Source Files / Lines</div>
     </div>
     <div class="kpi-box">
@@ -151,7 +151,7 @@
       <div class="kpi-label">Synthesized Retro-ADRs</div>
     </div>
     <div class="kpi-box">
-      <div class="kpi-value">10</div>
+      <div class="kpi-value">11</div>
       <div class="kpi-label">Git Commits Analyzed</div>
     </div>
   </section>
@@ -259,19 +259,19 @@
       <div class="card module-card" data-module="scaffolder">
         <div class="card-header">
           <h3>📦 scaffolder</h3>
-          <span class="badge badge-ok">Depth Ratio: 158.5</span>
+          <span class="badge badge-ok">Depth Ratio: 124.78</span>
         </div>
         <p class="mono-path">Seam: src/modules/scaffolder/index.mjs</p>
         <div class="metrics-row">
-          <span>Lines: <strong>653</strong> (634 hidden)</span>
+          <span>Lines: <strong>1150</strong> (1123 hidden)</span>
           <span>Fan-In: <strong>0</strong></span>
           <span>Fan-Out: <strong>0</strong></span>
           <span>Instability: <strong>0</strong></span>
         </div>
         <div class="exports-box">
-          <strong>Public Exports:</strong> <code class="sym">syncGovernanceDocs()</code> <code class="sym">scaffoldAdr()</code> <code class="sym">scaffoldDeepModule()</code> <code class="sym">scaffoldApiService()</code>
+          <strong>Public Exports:</strong> <code class="sym">syncGovernanceDocs()</code> <code class="sym">scaffoldAdr()</code> <code class="sym">scaffoldDeepModule()</code> <code class="sym">writeApiRouter()</code> <code class="sym">initFoundrySpec()</code> <code class="sym">validateFoundrySpec()</code> <code class="sym">compileFoundrySpec()</code> <code class="sym">verifySpecParity()</code> <code class="sym">scaffoldApiService()</code>
         </div>
-        <div class="adr-row"><span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0004</span> <span class="badge badge-adr">ADR-0009</span></div>
+        <div class="adr-row"><span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0003</span> <span class="badge badge-adr">ADR-0004</span> <span class="badge badge-adr">ADR-0009</span></div>
       </div>
 
       <div class="card module-card" data-module="sensors">
@@ -399,6 +399,51 @@
     <tbody>
       
       <tr>
+        <td><code>CONTEXT.md</code></td>
+        <td>root</td>
+        <td>6</td>
+        <td>0</td>
+        <td><strong>6</strong></td>
+        <td><span class="badge badge-danger">One-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>GLOSSARY.md</code></td>
+        <td>root</td>
+        <td>6</td>
+        <td>0</td>
+        <td><strong>6</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>docs/adr/README.md</code></td>
+        <td>root</td>
+        <td>6</td>
+        <td>0</td>
+        <td><strong>6</strong></td>
+        <td><span class="badge badge-danger">One-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>src/cli/factory.mjs</code></td>
+        <td>root</td>
+        <td>6</td>
+        <td>0</td>
+        <td><strong>6</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>tests/cli.integration.test.mjs</code></td>
+        <td>root</td>
+        <td>6</td>
+        <td>0</td>
+        <td><strong>6</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
         <td><code>README.md</code></td>
         <td>root</td>
         <td>6</td>
@@ -444,65 +489,20 @@
       </tr>
 
       <tr>
-        <td><code>CONTEXT.md</code></td>
-        <td>root</td>
-        <td>5</td>
-        <td>0</td>
-        <td><strong>5</strong></td>
-        <td><span class="badge badge-danger">One-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>GLOSSARY.md</code></td>
-        <td>root</td>
-        <td>5</td>
-        <td>0</td>
-        <td><strong>5</strong></td>
-        <td><span class="badge badge-ok">Two-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>docs/adr/README.md</code></td>
-        <td>root</td>
-        <td>5</td>
-        <td>0</td>
-        <td><strong>5</strong></td>
-        <td><span class="badge badge-danger">One-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>src/cli/factory.mjs</code></td>
-        <td>root</td>
-        <td>5</td>
-        <td>0</td>
-        <td><strong>5</strong></td>
-        <td><span class="badge badge-ok">Two-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>tests/cli.integration.test.mjs</code></td>
-        <td>root</td>
-        <td>5</td>
-        <td>0</td>
-        <td><strong>5</strong></td>
-        <td><span class="badge badge-ok">Two-Way Door</span></td>
-      </tr>
-
-      <tr>
         <td><code>.planning/ROADMAP.md</code></td>
         <td>root</td>
-        <td>4</td>
+        <td>5</td>
         <td>0</td>
-        <td><strong>4</strong></td>
+        <td><strong>5</strong></td>
         <td><span class="badge badge-ok">Two-Way Door</span></td>
       </tr>
 
       <tr>
         <td><code>.planning/STATE.md</code></td>
         <td>root</td>
-        <td>4</td>
+        <td>5</td>
         <td>0</td>
-        <td><strong>4</strong></td>
+        <td><strong>5</strong></td>
         <td><span class="badge badge-ok">Two-Way Door</span></td>
       </tr>
     </tbody>

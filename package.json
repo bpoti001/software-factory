@@ -14,6 +14,7 @@
     "factory:add-module": "node ./src/cli/factory.mjs add-module",
     "factory:add-adr": "node ./src/cli/factory.mjs add-adr",
     "factory:scaffold-api": "node ./src/cli/factory.mjs scaffold-api",
+    "factory:spec": "node ./src/cli/factory.mjs spec",
     "factory:analyze": "node ./src/cli/factory.mjs analyze",
     "factory:visualize": "node ./src/cli/factory.mjs visualize",
     "factory:pr": "node ./src/cli/factory.mjs pr-report",

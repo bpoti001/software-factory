@@ -171,6 +171,20 @@ test('CLI Integration [ADR-0009]: factory scaffold-api, add-module, add-adr, and
       { encoding: 'utf8' }
     );
     assert.match(syncOut, /\[Governance Auto-Sync\]/);
+
+    const specValOut = execFileSync(
+      process.execPath,
+      [cliPath, 'spec', 'validate', '--cwd', tmpApiDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(specValOut, /\[Foundry Spec Validated\]/);
+
+    const specVerifyOut = execFileSync(
+      process.execPath,
+      [cliPath, 'spec', 'verify', '--cwd', tmpApiDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(specVerifyOut, /\[Foundry Spec Parity Verified\]/);
   } finally {
     fs.rmSync(tmpApiDir, { recursive: true, force: true });
   }

@@ -37,6 +37,10 @@ import {
   scaffoldAdr,
   scaffoldDeepModule,
   scaffoldApiService,
+  initFoundrySpec,
+  validateFoundrySpec,
+  compileFoundrySpec,
+  verifySpecParity,
 } from '../modules/scaffolder/index.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
@@ -514,10 +518,73 @@ function runScaffoldApiCommand(args) {
   });
 
   console.log(`🚀 [Turnkey API Scaffolder] Generated governed API service '${result.name}' at ${result.targetDir}:`);
-  console.log(`   • HTTP Router & Server: src/app.mjs, src/server.mjs (Port ${result.port})`);
-  console.log(`   • Deep Modules (${result.modules.length}):     ${result.modules.map((m) => `src/modules/${m}/index.mjs`).join(', ')}`);
-  console.log(`   • Automated Tests:      tests/api.integration.test.mjs + ${result.modules.length} seam test(s)`);
-  console.log(`   • Governance & ADRs:    CONTEXT.md, GLOSSARY.md, docs/adr/0001-*.md (100% synced)`);
+  console.log(`   • Foundry Executable Spec: ${result.specPath} + ${result.specBlueprintPath}`);
+  console.log(`   • HTTP Router & Server:    src/app.mjs, src/server.mjs (Port ${result.port})`);
+  console.log(`   • Deep Modules (${result.modules.length}):        ${result.modules.map((m) => `src/modules/${m}/index.mjs`).join(', ')}`);
+  console.log(`   • Automated Tests:         tests/api.integration.test.mjs + ${result.modules.length} seam test(s)`);
+  console.log(`   • Governance & ADRs:       CONTEXT.md, GLOSSARY.md, docs/adr/0001-*.md (100% synced)`);
+}
+
+function runSpecCommand(args) {
+  const action = args.find((a) => !a.startsWith('--')) || 'validate';
+  const targetDir = path.resolve(
+    parseFlag(args, '--dir') ||
+      parseFlag(args, '--out') ||
+      parseFlag(args, '--cwd') ||
+      parseFlag(args, '--path') ||
+      process.cwd()
+  );
+  const specRelPath = parseFlag(args, '--spec') || 'specs/service.spec.json';
+  const specAbsPath = path.resolve(targetDir, specRelPath);
+
+  if (action === 'init') {
+    const name = parseFlag(args, '--name') || path.basename(targetDir);
+    const modulesArg = parseFlag(args, '--modules');
+    const port = Number(parseFlag(args, '--port') || 3000);
+    const modules = modulesArg
+      ? modulesArg.split(',').map((s) => s.trim()).filter(Boolean)
+      : ['orders', 'payments'];
+
+    const res = initFoundrySpec({ cwd: targetDir, serviceName: name, port, modules });
+    console.log(`📐 [Foundry SDD Engine] Initialized Executable Spec for '${res.spec.serviceName}':`);
+    console.log(`   • Machine Spec:   ${res.specJsonPath} (${res.spec.modules.length} bounded contexts)`);
+    console.log(`   • Blueprint Doc:  ${res.specMdPath}`);
+    return;
+  }
+
+  if (action === 'validate') {
+    const res = validateFoundrySpec(specAbsPath);
+    if (!res.valid) {
+      console.error(`❌ [Foundry Spec Validation Failed] ${res.errors.join('; ')}`);
+      process.exit(1);
+    }
+    console.log(
+      `✅ [Foundry Spec Validated] ${res.summary.serviceName}: ${res.summary.moduleCount} module(s), ${res.summary.fieldCount} field(s), ${res.summary.endpointCount} endpoint(s), ${res.summary.scenarioCount} scenario(s)`
+    );
+    return;
+  }
+
+  if (action === 'compile') {
+    const res = compileFoundrySpec({ cwd: targetDir, specPath: specRelPath });
+    console.log(`⚙️  [Foundry Spec Compiler] Compiled '${res.name}' from ${res.specPath}:`);
+    console.log(`   • Modules Compiled: ${res.modules.join(', ')}`);
+    console.log(`   • HTTP Router:      src/app.mjs (with 1MB payload guard & 422 boundary validation)`);
+    console.log(`   • Governance Sync:  ✅ CONTEXT.md & docs/adr/README.md synchronized`);
+    return;
+  }
+
+  if (action === 'verify') {
+    const res = verifySpecParity({ cwd: targetDir, specPath: specRelPath });
+    if (!res.aligned) {
+      console.error(`❌ [Foundry Spec Parity Drift] ${res.drift.join('; ')}`);
+      process.exit(1);
+    }
+    console.log(`✅ [Foundry Spec Parity Verified] 100% alignment across ${res.checkedModules.join(', ')}`);
+    return;
+  }
+
+  console.error('Usage: node src/cli/factory.mjs spec <init|validate|compile|verify> [--cwd <dir>] [--spec <path>]');
+  process.exit(1);
 }
 
 function runGsdCommand(args) {
@@ -600,9 +667,12 @@ switch (subcommand) {
   case 'scaffold-api':
     runScaffoldApiCommand(restArgs);
     break;
+  case 'spec':
+    runSpecCommand(restArgs);
+    break;
   default:
     console.log(
-      'Usage: node src/cli/factory.mjs <size|verify|sync|add-module|add-adr|scaffold-api|learn|discover|analyze|adr-synthesize|visualize|pr-report|gsd> [options]'
+      'Usage: node src/cli/factory.mjs <size|verify|sync|add-module|add-adr|scaffold-api|spec|learn|discover|analyze|adr-synthesize|visualize|pr-report|gsd> [options]'
     );
     process.exit(subcommand ? 1 : 0);
 }

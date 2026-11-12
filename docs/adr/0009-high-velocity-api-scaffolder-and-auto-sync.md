@@ -1,62 +1,68 @@
-# ADR-0009: High-Velocity API Service Scaffolder, Auto-Sync Living Docs, and Zero-Ceremony Module Generator
+# ADR-0009: Foundry Spec-Driven Development (SDD) Engine, High-Velocity API Scaffolder, and Two-Way Governance Auto-Sync
 
 - **Status**: `accepted`
-- **Date**: 2026-11-10
+- **Date**: 2026-11-12
 - **Deciders**: `@architect`, Principal Engineering
 - **Confluence Source**: `CONF-ADR-0009` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0009`)
 - **Governing Jira Epic**: `ARCH-11`
-- **Scope / Bounded Context**: `src/modules/scaffolder/`, `src/modules/sizing/`, `src/cli/factory.mjs`, `scripts/factory-init.sh`
+- **Scope / Bounded Context**: `src/modules/scaffolder/`, `src/cli/factory.mjs`, `specs/`
 
 ---
 
 ## 1. Context & Problem Statement
 
-When engineers use the ADR-Governed Software Factory to build a multi-endpoint API service from scratch, delivery takes multiple days instead of minutes due to five compounding workflow bottlenecks:
-1. **Repeated `Large [L]` Hard-Stop Interruptions**: Creating each domain module (`users`, `orders`, `auth`), route, or schema file triggers an isolated `Large [L]` hard stop requiring manual ADR authoring before writing code.
-2. **Manual 5-File Markdown Synchronization Tax**: Every new module or ADR requires hand-editing `docs/adr/NNNN-*.md`, `docs/adr/README.md`, `CONTEXT.md` Section 2, `CONTEXT.md` Section 3, and `.planning/ROADMAP.md` with exact regex-matching table syntax. A single formatting mismatch causes `factory verify` to reject commits.
-3. **Per-Endpoint Ceremony Overhead**: Running separate Jira/Confluence MCP queries, GSD phase plans, and multi-agent handoffs per CRUD endpoint multiplies token and human latency by $10\times$.
-4. **Target Repo Module Pollution in `factory-init.sh`**: Copying the Software Factory's own internal `src/modules/*` (`sizing`, `governance`, `sensors`, etc.) and `ADR-0000`–`ADR-0008` into a target API repository pollutes the application's domain module namespace.
-5. **Lack of 1-Command Service & Module Generators**: Engineers lack deterministic CLI generators to scaffold a working Deep-Module API service, add a governed domain module, mint a sensor-compliant ADR, or auto-sync `CONTEXT.md`.
+When engineers use the ADR-Governed Software Factory to build a multi-endpoint API service, two failure modes occur:
+1. **Multi-Day Ceremony without Automation**: Hand-editing 5 Markdown governance tables (`CONTEXT.md` Sections 2 & 3, `docs/adr/README.md`, `docs/adr/NNNN-*.md`, `.planning/ROADMAP.md`) and hitting repeated `Large [L]` stops on every folder creation stalls API delivery for days.
+2. **Hollow Boilerplate without Spec-Driven Development (SDD)**: A naive scaffolder that accepts only bare module names (`--modules users,orders`) introduces 8 structural problems identified during our Two-Axis Self-Review (`CODING_STANDARDS.md`):
+   - **S01 (Blind CRUD without Schema Validation)**: Accepting arbitrary unvalidated payloads violates `CODING_STANDARDS.md` §2.2 boundary validation rules.
+   - **S02 (Day-2 Route Desynchronization)**: Running `add-module` without updating `src/app.mjs` leaves new modules unrouted (`404 Not Found`), re-introducing Shotgun Surgery (§3.7).
+   - **S03 (Orphaned ADR Sensor Failures)**: Minting an ADR via `add-adr` without a linked `[ADR-NNNN]` contract test causes `checkTraceability` to fail on the next `factory verify`.
+   - **S04 (Unbounded HTTP Body DoS & Missing `:id` Routes)**: Reading `req.on('data')` without a `MAX_BODY_BYTES` ceiling violates §2.3 Security Checklist, and omitting `GET /api/<module>/:id` leaves `get<Singular>ById` unreachable over HTTP.
+   - **S05 (One-Way Sync Stale Rows)**: `syncGovernanceDocs` only appended new modules/ADRs and never pruned deleted modules or ADRs from `CONTEXT.md` and `docs/adr/README.md`.
+   - **S06 (Unresettable Singleton State)**: Module stores lacked `reset<Plural>Store()` and validation hooks, causing cross-test state contamination.
+   - **S07 (Monolithic File & Function Granularity)**: Putting sync, ADR/module templating, and HTTP scaffolding in a single 633-line file violated `CODING_STANDARDS.md` §2.2 (target 200–400 lines) and §3.8 (Divergent Change).
+   - **S08 (Missing Operations Rollback Plan)**: As a `One-Way Door` change touching CLI and governance contracts, `ADR-0009` requires an explicit rollback runbook (`ADR-0005`, `ADR-0007`).
 
 ---
 
 ## 2. Decision
 
-We will introduce the **High-Velocity Scaffolder & Auto-Sync Governance Module (`src/modules/scaffolder/index.mjs`)** and wire four high-speed automation commands into `src/cli/factory.mjs`:
+We will upgrade `src/modules/scaffolder/index.mjs` into a **Foundry Spec-Driven Development (SDD) & High-Velocity Scaffolder Engine**, decomposed internally into focused private submodules under `src/modules/scaffolder/lib/`:
 
-1. **Automated Governance Healer (`factory sync` -> `syncGovernanceDocs`)**:
-   - Scans `src/modules/*` and `docs/adr/*.md` and automatically updates `CONTEXT.md` Section 2 (Module Map), `CONTEXT.md` Section 3 (ADR Registry), and `docs/adr/README.md` so engineers and agents never hand-edit Markdown parity tables.
+1. **Foundry Spec-Driven Development Engine (`src/modules/scaffolder/lib/spec-engine.mjs`)**:
+   - `initFoundrySpec({ cwd, serviceName, port, modules })`: Generates an executable **Foundry Service Specification** (`specs/service.spec.json`) and human-readable **Spec Blueprint** (`specs/SPEC.md`) defining bounded contexts, entity field schemas (`type`, `required`, `enum`, `min`, `max`), REST endpoint contracts (`GET /api/<m>`, `GET /api/<m>/:id`, `POST /api/<m>`), domain invariants, and Given/When/Then acceptance scenarios.
+   - `validateFoundrySpec(spec)`: Deterministically validates schema completeness, field types, endpoint contracts, and acceptance scenarios before code generation.
+   - `compileFoundrySpec({ cwd, specPath })`: Compiles a validated Foundry Spec into schema-enforcing Deep Modules, HTTP routes, ADR traceability docs, and Spec Acceptance Tests (`tests/spec.acceptance.test.mjs`).
+   - `verifySpecParity({ cwd, specPath })`: Verifies 1:1 parity between `specs/service.spec.json`, `src/modules/<domain>/index.mjs` exports, `src/app.mjs` routes, `CONTEXT.md`, and `tests/`.
 
-2. **1-Command Deep Module Generator (`factory add-module <name>` -> `scaffoldDeepModule`)**:
-   - Generates `src/modules/<name>/index.mjs` (narrow public seam), `src/modules/<name>/lib/<name>-service.mjs` (encapsulated domain logic), and `tests/<name>.seam.test.mjs` (public-seam test), then invokes `syncGovernanceDocs` automatically in `< 50ms`.
+2. **Two-Way Governance Auto-Sync Engine (`src/modules/scaffolder/lib/sync-engine.mjs`)**:
+   - `syncGovernanceDocs({ cwd })`: Performs **two-way synchronization**—registering newly created `src/modules/*` and `docs/adr/NNNN-*.md` AND pruning stale rows for deleted modules or deleted ADR files from `CONTEXT.md` and `docs/adr/README.md`.
 
-3. **1-Command Sensor-Compliant ADR Generator (`factory add-adr "<Title>"` -> `scaffoldAdr`)**:
-   - Mints the next sequential `docs/adr/NNNN-<slug>.md` pre-populated with all four mandatory sensor sections (`## 1. Context & Problem Statement`, `## 2. Decision`, `## 3. Alternatives Considered`, `## 4. Consequences`) and auto-registers it across `CONTEXT.md` and `docs/adr/README.md`.
-
-4. **1-Command Turnkey API Service Scaffolder (`factory scaffold-api` -> `scaffoldApiService`)**:
-   - Generates a complete, runnable, zero-dependency Node.js HTTP JSON API service in any target directory (`--out <dir> --name <name> --modules auth,users,orders`) complete with:
-     - `src/app.mjs` and `src/server.mjs` (`/health` and `/api/<module>` REST endpoints)
-     - Governed Deep Modules under `src/modules/<module>/`
-     - Passing seam and HTTP API integration tests (`tests/*.test.mjs`)
-     - Clean project-specific `CONTEXT.md`, `GLOSSARY.md`, `CODING_STANDARDS.md`, and `docs/adr/` without polluting the target app's `src/modules/` with internal factory modules.
+3. **Hardened Module, ADR & API Generator (`src/modules/scaffolder/lib/generator-engine.mjs`)**:
+   - `scaffoldDeepModule`: Generates `src/modules/<name>/index.mjs` + `lib/<name>-service.mjs` with **boundary schema validation** (`validate<Singular>Input` returning `{ valid, errors }` and throwing `statusCode: 422` on invalid fields), `reset<Plural>Store()`, and **automatically wires the module into `src/app.mjs`** if an API router exists in the project.
+   - `scaffoldAdr`: Mints a sensor-compliant `docs/adr/NNNN-<slug>.md` AND creates/updates `tests/adr-traceability.test.mjs` citing `[ADR-NNNN]` so `checkTraceability` passes immediately.
+   - `scaffoldApiService`: Generates a hardened HTTP JSON API server (`src/app.mjs`) with a `1MB` `MAX_BODY_BYTES` payload guard (`413 Payload Too Large`), `422 Unprocessable Entity` schema validation errors, `GET /health`, `GET /api/<module>`, `GET /api/<module>/:id`, and `POST /api/<module>`, backed by `specs/service.spec.json` and `specs/SPEC.md`.
 
 ---
 
 ## 3. Alternatives Considered
 
-- **Alternative A: Keep Manual Markdown Editing and Enforce Strict Failures Only**:
-  - *Rejected*: Forces humans and coding agents to spend 80% of their time debugging Markdown table formatting instead of building API business logic.
-- **Alternative B: Disable Governance Verification on API Projects**:
-  - *Rejected*: Loses Deep Module seam encapsulation (`ADR-0001`) and architectural traceability (`ADR-0003`). Making compliance automatic via `factory sync`, `factory add-module`, and `factory scaffold-api` achieves both high velocity and 100% governance.
+- **Alternative A: Keep Spec-Less String-Only Scaffolding (`--modules users,orders`)**:
+  - *Rejected*: Produces hollow CRUD shells without field validation, domain invariants, or testable acceptance criteria, forcing engineers back into days of manual wiring.
+- **Alternative B: Require External OpenAPI / Heavy Codegen Dependencies**:
+  - *Rejected*: Violates `ADR-0004` (zero external npm dependencies). Native JSON/Markdown Foundry Specs (`specs/service.spec.json` + `specs/SPEC.md`) require zero external packages and run in `< 50ms`.
 
 ---
 
 ## 4. Consequences
 
 ### Positive
-- Building a multi-module governed API service drops from **multiple days to under 60 seconds** (`factory scaffold-api` + `factory add-module` + `factory sync`).
-- Eliminates manual `CONTEXT.md` and `docs/adr/README.md` parity failures completely.
-- Target API repositories stay 100% clean, containing only their own domain modules in `src/modules/`.
+- Enables true **Spec-Driven Development (SDD) on the Foundry**: engineers or AI agents edit `specs/service.spec.json`, run `factory spec validate && factory spec compile`, and get schema-validated Deep Modules, REST routes, ADRs, and acceptance tests in `< 100ms`.
+- Resolves all 8 defects (`S01`–`S08`) identified during the Software Factory self-review.
 
 ### Negative / Trade-offs
-- Auto-synced rows in `CONTEXT.md` use inferred descriptions until enriched by the engineer or architect.
+- Generated boundary validators support standard JSON schema primitives (`string`, `number`, `boolean`, `enum`, `required`, `min`, `max`); complex cross-entity async rules still belong in domain service methods.
+
+### Operations & Rollback Runbook (`ADR-0005` / `ADR-0007`)
+- **Blast Radius**: Scoped to `src/modules/scaffolder/`, `src/cli/factory.mjs`, and `specs/`.
+- **Rollback Procedure**: Revert branch `feat/high-velocity-api-scaffolder` or run `git revert <commit>` and `node src/cli/factory.mjs verify` to restore pre-Phase-8 CLI surface.
