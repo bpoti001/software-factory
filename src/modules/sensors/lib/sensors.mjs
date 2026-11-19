@@ -210,6 +210,107 @@ export function checkVerificationReceipt(options = {}) {
 }
 
 /**
+ * Verifies read-path purity and metric counter integrity in domain modules (ADR-0010, ENH-0008).
+ * Flags global RNG seed mutations (`random.seed`, `np.random.seed`) inside `src/modules/`
+ * and synthetic metric counter offsets (`distance_computations += int(...)`).
+ * @param {Record<string, string>} filesMap
+ */
+export function checkReadPathPurity(filesMap = {}) {
+  const violations = [];
+  const GLOBAL_RNG_MUTATION_REGEX = /\b(?:np\.random\.seed|random\.seed)\s*\(/;
+  const SYNTHETIC_COUNTER_OFFSET_REGEX = /\b(?:distance_computations|dist_comps|latency_ms)\s*\+=\s*int\s*\(/;
+
+  for (const [filePath, content] of Object.entries(filesMap)) {
+    if (typeof content !== 'string') continue;
+    if (
+      !filePath.startsWith('src/modules/') ||
+      filePath.startsWith('tests/') ||
+      filePath.includes('.test.')
+    ) {
+      continue;
+    }
+
+    const lines = content.split(/\r?\n/);
+    lines.forEach((lineText, idx) => {
+      const trimmed = lineText.trim();
+      if (trimmed.startsWith('//') || trimmed.startsWith('#') || trimmed.startsWith('*')) {
+        return;
+      }
+      if (GLOBAL_RNG_MUTATION_REGEX.test(trimmed)) {
+        violations.push(
+          Object.freeze({
+            file: filePath,
+            line: idx + 1,
+            rule: 'no-global-rng-seed-in-module',
+            snippet: trimmed,
+            message: `[Sensor: read-path-purity] '${filePath}:${idx + 1}' mutates global RNG state inside a module. Use an isolated local PRNG or deterministic hash (ADR-0010, ENH-0008).`,
+          })
+        );
+      }
+      if (SYNTHETIC_COUNTER_OFFSET_REGEX.test(trimmed)) {
+        violations.push(
+          Object.freeze({
+            file: filePath,
+            line: idx + 1,
+            rule: 'no-synthetic-metric-offset',
+            snippet: trimmed,
+            message: `[Sensor: read-path-purity] '${filePath}:${idx + 1}' applies a synthetic offset to an empirical metric counter (ADR-0010, ENH-0008).`,
+          })
+        );
+      }
+    });
+  }
+
+  return Object.freeze(violations);
+}
+
+/**
+ * Verifies 1:1 citation bijection between `\cite{...}` keys and `\bibitem{...}` / BibTeX entries (ADR-0010, ENH-0007).
+ * @param {{ texContent?: string, bibContent?: string }} [input]
+ */
+export function checkLatexCitationBijection(input = {}) {
+  const texContent = String(input.texContent || '');
+  const bibContent = String(input.bibContent || '');
+
+  const citedSet = new Set();
+  const citeRegex = /\\cite[a-zA-Z*]*\{([^}]+)\}/g;
+  let match;
+  while ((match = citeRegex.exec(texContent)) !== null) {
+    const keys = match[1]
+      .split(',')
+      .map((k) => k.trim())
+      .filter(Boolean);
+    for (const k of keys) {
+      citedSet.add(k);
+    }
+  }
+
+  const definedSet = new Set();
+  const bibitemRegex = /\\bibitem(?:\[[^\]]*\])?\{([^}]+)\}/g;
+  while ((match = bibitemRegex.exec(texContent)) !== null) {
+    definedSet.add(match[1].trim());
+  }
+
+  const bibEntryRegex = /@[a-zA-Z]+\s*\{\s*([^,\s]+)\s*,/g;
+  while ((match = bibEntryRegex.exec(bibContent)) !== null) {
+    definedSet.add(match[1].trim());
+  }
+
+  const citedKeys = Array.from(citedSet).sort();
+  const definedKeys = Array.from(definedSet).sort();
+  const missingInBib = citedKeys.filter((k) => !definedSet.has(k));
+  const uncitedInBib = definedKeys.filter((k) => !citedSet.has(k));
+
+  return Object.freeze({
+    passed: missingInBib.length === 0 && uncitedInBib.length === 0,
+    citedKeys: Object.freeze(citedKeys),
+    definedKeys: Object.freeze(definedKeys),
+    missingInBib: Object.freeze(missingInBib),
+    uncitedInBib: Object.freeze(uncitedInBib),
+  });
+}
+
+/**
  * Runs all deterministic artifact sensors across changed files and docs.
  * @param {{
  *   fileContents?: Record<string, string>,
@@ -221,19 +322,24 @@ export function runSensors(input = {}) {
   const fileContents = input.fileContents || {};
   const requiredSections = checkRequiredSections(fileContents);
   const claimSources = checkClaimSources(fileContents);
+  const readPathPurity = checkReadPathPurity(fileContents);
   const traceability = checkTraceability({
     contextMarkdown: input.contextMarkdown,
     codeFiles: input.codeFiles,
     fileContents
   });
 
-  const passed = requiredSections.length === 0 && claimSources.length === 0;
+  const passed =
+    requiredSections.length === 0 &&
+    claimSources.length === 0 &&
+    readPathPurity.length === 0;
 
   return Object.freeze({
     passed,
     findings: Object.freeze({
       requiredSections,
       claimSources,
+      readPathPurity,
       traceability
     })
   });

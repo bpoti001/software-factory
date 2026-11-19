@@ -215,6 +215,9 @@ function runVerifyCommand(args) {
     for (const f of sensorReport.findings.claimSources) {
       console.error(`❌ ${f.message}`);
     }
+    for (const p of sensorReport.findings.readPathPurity || []) {
+      console.error(`❌ ${p.message}`);
+    }
     process.exit(1);
   }
 

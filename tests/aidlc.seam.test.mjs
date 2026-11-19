@@ -9,7 +9,9 @@ import {
   runSensors,
   checkRequiredSections,
   checkTraceability,
-  checkClaimSources
+  checkClaimSources,
+  checkReadPathPurity,
+  checkLatexCitationBijection,
 } from '../src/modules/sensors/index.mjs';
 import {
   recordLearnedRule,
@@ -165,4 +167,45 @@ test('Review [ADR-0007]: assessMergeDanger enforces operations rollback plan for
   assert.equal(oneWayWithPlan.door, 'One-Way Door');
   assert.equal(oneWayWithPlan.operationsGate.required, true);
   assert.equal(oneWayWithPlan.operationsGate.passed, true);
+});
+
+test('Sensors [ADR-0010, ENH-0007, ENH-0008]: checkReadPathPurity and checkLatexCitationBijection enforce research integrity', () => {
+  const dirtyModule = `
+def search_query(q):
+    random.seed(42)
+    distance_computations += int(len(nodes) * 1.5)
+    return []
+`;
+  const cleanModule = `
+def search_query(q):
+    rng = random.Random(42)
+    distance_computations += 1
+    return []
+`;
+
+  const purityViolations = checkReadPathPurity({
+    'src/modules/retrieval/lib/engine.py': dirtyModule,
+  });
+  assert.equal(purityViolations.length, 2);
+  assert.ok(purityViolations.some((v) => v.rule === 'no-global-rng-seed-in-module'));
+  assert.ok(purityViolations.some((v) => v.rule === 'no-synthetic-metric-offset'));
+
+  const cleanViolations = checkReadPathPurity({
+    'src/modules/retrieval/lib/engine.py': cleanModule,
+  });
+  assert.equal(cleanViolations.length, 0);
+
+  const bijectiveReport = checkLatexCitationBijection({
+    texContent: 'We compare against HNSW \\cite{malkov2018hnsw, patel2024acorn}.\n\\bibitem{malkov2018hnsw} Malkov 2018.\n\\bibitem{patel2024acorn} Patel 2024.',
+  });
+  assert.equal(bijectiveReport.passed, true);
+  assert.deepEqual(bijectiveReport.missingInBib, []);
+  assert.deepEqual(bijectiveReport.uncitedInBib, []);
+
+  const driftReport = checkLatexCitationBijection({
+    texContent: 'We cite \\cite{malkov2018hnsw, ghost2026}.\n\\bibitem{malkov2018hnsw} Malkov.\n\\bibitem{orphan2020} Orphan.',
+  });
+  assert.equal(driftReport.passed, false);
+  assert.deepEqual(driftReport.missingInBib, ['ghost2026']);
+  assert.deepEqual(driftReport.uncitedInBib, ['orphan2020']);
 });

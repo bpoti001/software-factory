@@ -8,6 +8,8 @@ export {
   checkRequiredSections,
   checkClaimSources,
   checkTraceability,
+  checkReadPathPurity,
+  checkLatexCitationBijection,
   emitVerificationReceipt,
   checkVerificationReceipt
 } from './lib/sensors.mjs';
