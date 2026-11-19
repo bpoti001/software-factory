@@ -189,3 +189,47 @@ test('CLI Integration [ADR-0009]: factory scaffold-api, add-module, add-adr, and
     fs.rmSync(tmpApiDir, { recursive: true, force: true });
   }
 });
+
+test('CLI Integration [ADR-0010]: factory overseer-audit and factory nudge verify 11 research skills, Multi-Model Routing, and record backlog nudges', () => {
+  const auditJson = execFileSync(
+    process.execPath,
+    [cliPath, 'overseer-audit', '--json'],
+    { encoding: 'utf8' }
+  );
+  const auditReport = JSON.parse(auditJson);
+  assert.equal(auditReport.passed, true);
+  assert.equal(auditReport.adr0010Present, true);
+  assert.equal(auditReport.missingSkills.length, 0);
+  assert.equal(auditReport.installedSkills.length, 11);
+  assert.equal(auditReport.modelRouting.planner, 'Argon (High Thinking)');
+  assert.equal(auditReport.modelRouting.builder, 'Hydrogen (High Thinking)');
+  assert.equal(auditReport.modelRouting.reviewer, 'Neon (High Thinking)');
+  assert.equal(auditReport.modelRouting.overseer, 'Factory Overseer');
+
+  const tmpBacklog = path.join(os.tmpdir(), `sf-overseer-backlog-${Date.now()}.md`);
+  try {
+    const nudgeJson = execFileSync(
+      process.execPath,
+      [
+        cliPath,
+        'nudge',
+        'Verify 1:1 ADR-to-Theorem parity before running PaperVizAgent',
+        '--source',
+        'Prism-ANN-Audit',
+        '--file',
+        tmpBacklog,
+        '--json',
+      ],
+      { encoding: 'utf8' }
+    );
+    const nudgeReport = JSON.parse(nudgeJson);
+    assert.equal(nudgeReport.passed, true);
+    assert.equal(nudgeReport.recordedEntry.enhId, 'ENH-0001');
+    assert.match(nudgeReport.recordedEntry.contentHash, /^cid:[a-f0-9]{16}$/);
+    assert.match(fs.readFileSync(tmpBacklog, 'utf8'), /Verify 1:1 ADR-to-Theorem parity/);
+  } finally {
+    try {
+      fs.unlinkSync(tmpBacklog);
+    } catch {}
+  }
+});

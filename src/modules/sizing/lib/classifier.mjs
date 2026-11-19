@@ -56,13 +56,16 @@ function findStructuralFiles(changedFiles) {
 }
 
 /**
- * Infers task Intent Profile, depth, and test strategy from prompt and size (ADR-0007).
+ * Infers task Intent Profile, depth, and test strategy from prompt and size (ADR-0007, ADR-0010).
  * @param {string} prompt
  * @param {'S' | 'M' | 'L'} size
  */
 function inferIntentProfile(prompt, size) {
   if (/\b(cve-\d+|security|vulnerability|auth\s+bypass|sanitize|injection)\b/i.test(prompt)) {
     return { profile: 'security-patch', depth: 'minimal', testStrategy: 'minimal' };
+  }
+  if (/\b(arxiv|theorem|lemma|hypothesis|ablation|scholarpeer|paperviz|autoresearch|manuscript|latex)\b/i.test(prompt)) {
+    return { profile: 'research', depth: 'comprehensive', testStrategy: 'comprehensive' };
   }
   if (/\b(terraform|k8s|kubernetes|cloudwatch|ecs|ec2|docker|infra|infrastructure|iac|pipeline|deploy)\b/i.test(prompt)) {
     return { profile: 'infra', depth: 'standard', testStrategy: 'standard' };
@@ -86,6 +89,33 @@ function inferIntentProfile(prompt, size) {
 }
 
 /**
+ * Resolves the deterministic Multi-Model Tier Routing assignment (ADR-0010).
+ * - Planner / Researcher (`@architect` / `@orchestrator`): Argon (High Thinking)
+ * - Builder (`@engineer`): Hydrogen (High Thinking)
+ * - Adversarial Reviewer (`@pr-reviewer`): Neon (High Thinking)
+ * - Continuous Factory Self-Improvement (`@factory-overseer`): Factory Overseer
+ *
+ * @param {'S' | 'M' | 'L'} [size='M']
+ * @param {string} [profile='feature']
+ */
+export function resolveModelRouting(size = 'M', profile = 'feature') {
+  const activeLeadModel =
+    size === 'L' || profile === 'research'
+      ? 'Argon (High Thinking) -> Hydrogen (High Thinking) -> Neon (High Thinking)'
+      : size === 'M'
+        ? 'Hydrogen (High Thinking) -> Neon (High Thinking)'
+        : 'Hydrogen (High Thinking)';
+
+  return Object.freeze({
+    planner: 'Argon (High Thinking)',
+    builder: 'Hydrogen (High Thinking)',
+    reviewer: 'Neon (High Thinking)',
+    overseer: 'Factory Overseer',
+    activeLeadModel,
+  });
+}
+
+/**
  * Builds the immutable SizingDecision output for a chosen size.
  * @param {'S' | 'M' | 'L'} size
  * @param {'user-override' | 'auto-detected' | 'safety-escalated'} mode
@@ -95,6 +125,7 @@ function inferIntentProfile(prompt, size) {
  */
 function buildSizingDecision(size, mode, escalated, escalationReason, prompt = '') {
   const intent = inferIntentProfile(prompt, size);
+  const modelRouting = resolveModelRouting(size, intent.profile);
 
   if (size === 'S') {
     return Object.freeze({
@@ -103,6 +134,7 @@ function buildSizingDecision(size, mode, escalated, escalationReason, prompt = '
       profile: intent.profile,
       depth: intent.depth,
       testStrategy: intent.testStrategy,
+      modelRouting,
       mode,
       escalated,
       escalationReason,
@@ -122,6 +154,7 @@ function buildSizingDecision(size, mode, escalated, escalationReason, prompt = '
       profile: intent.profile,
       depth: intent.depth,
       testStrategy: intent.testStrategy,
+      modelRouting,
       mode,
       escalated,
       escalationReason,
@@ -140,6 +173,7 @@ function buildSizingDecision(size, mode, escalated, escalationReason, prompt = '
     profile: intent.profile,
     depth: intent.depth,
     testStrategy: intent.testStrategy,
+    modelRouting,
     mode,
     escalated,
     escalationReason,

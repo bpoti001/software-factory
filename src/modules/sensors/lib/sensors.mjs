@@ -58,8 +58,14 @@ export function checkClaimSources(filesMap = {}) {
 
   for (const [filePath, content] of Object.entries(filesMap)) {
     if (typeof content !== 'string') continue;
-    // Only scan markdown/planning documents, never code or test files
-    if (!filePath.endsWith('.md') || filePath.startsWith('tests/') || filePath.includes('.test.')) {
+    // Only scan project markdown/planning documents, never code, test, or agent skill prompt files
+    if (
+      !filePath.endsWith('.md') ||
+      filePath.startsWith('tests/') ||
+      filePath.includes('.test.') ||
+      filePath.startsWith('.agents/') ||
+      filePath.startsWith('.github/')
+    ) {
       continue;
     }
     const lines = content.split(/\r?\n/);
