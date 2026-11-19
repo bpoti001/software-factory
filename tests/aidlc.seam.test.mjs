@@ -13,6 +13,7 @@ import {
   checkReadPathPurity,
   checkLatexCitationBijection,
   checkBenchmarkEmpiricalPurity,
+  checkFileSizeCeiling,
 } from '../src/modules/sensors/index.mjs';
 import {
   recordLearnedRule,
@@ -230,4 +231,13 @@ def run_suite(index, queries):
     'run_prism_ann_benchmarks.py': liveBench,
   });
   assert.equal(cleanBenchViolations.length, 0);
+
+  const oversizedCode = Array.from({ length: 1005 }, (_, i) => `const x${i} = ${i};`).join('\n');
+  const ceilingViolations = checkFileSizeCeiling({
+    'src/modules/bloated/lib/monolith.mjs': oversizedCode,
+    'src/modules/clean/lib/modular.mjs': 'export const ok = true;\n',
+  });
+  assert.equal(ceilingViolations.length, 1);
+  assert.equal(ceilingViolations[0].file, 'src/modules/bloated/lib/monolith.mjs');
+  assert.equal(ceilingViolations[0].rule, 'thermo-nuclear-file-size-ceiling');
 });

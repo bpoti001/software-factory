@@ -221,6 +221,9 @@ function runVerifyCommand(args) {
     for (const b of sensorReport.findings.benchmarkEmpiricalPurity || []) {
       console.error(`❌ ${b.message}`);
     }
+    for (const c of sensorReport.findings.fileSizeCeiling || []) {
+      console.error(`❌ ${c.message}`);
+    }
     process.exit(1);
   }
 

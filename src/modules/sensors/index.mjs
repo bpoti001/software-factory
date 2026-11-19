@@ -11,6 +11,7 @@ export {
   checkReadPathPurity,
   checkLatexCitationBijection,
   checkBenchmarkEmpiricalPurity,
+  checkFileSizeCeiling,
   emitVerificationReceipt,
   checkVerificationReceipt
 } from './lib/sensors.mjs';

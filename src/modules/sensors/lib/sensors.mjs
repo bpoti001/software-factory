@@ -357,6 +357,42 @@ export function checkBenchmarkEmpiricalPurity(filesMap = {}) {
 }
 
 /**
+ * Enforces the Thermo-Nuclear Code Quality 1,000-line ceiling on source & benchmark files (ADR-0010, ENH-0012).
+ * @param {Record<string, string>} filesMap
+ * @param {number} [maxLines=1000]
+ */
+export function checkFileSizeCeiling(filesMap = {}, maxLines = 1000) {
+  const violations = [];
+  const CODE_FILE_REGEX = /\.(?:py|mjs|cjs|js|ts|tsx)$/i;
+
+  for (const [filePath, content] of Object.entries(filesMap)) {
+    if (typeof content !== 'string') continue;
+    if (
+      !CODE_FILE_REGEX.test(filePath) ||
+      filePath.startsWith('.agents/') ||
+      filePath.startsWith('.github/')
+    ) {
+      continue;
+    }
+
+    const lineCount = content.split(/\r?\n/).length;
+    if (lineCount > maxLines) {
+      violations.push(
+        Object.freeze({
+          file: filePath,
+          lineCount,
+          maxLines,
+          rule: 'thermo-nuclear-file-size-ceiling',
+          message: `[Sensor: file-size-ceiling] '${filePath}' has ${lineCount} lines, exceeding the ${maxLines}-line Thermo-Nuclear ceiling (ADR-0010, ENH-0012).`,
+        })
+      );
+    }
+  }
+
+  return Object.freeze(violations);
+}
+
+/**
  * Runs all deterministic artifact sensors across changed files and docs.
  * @param {{
  *   fileContents?: Record<string, string>,
@@ -370,6 +406,7 @@ export function runSensors(input = {}) {
   const claimSources = checkClaimSources(fileContents);
   const readPathPurity = checkReadPathPurity(fileContents);
   const benchmarkEmpiricalPurity = checkBenchmarkEmpiricalPurity(fileContents);
+  const fileSizeCeiling = checkFileSizeCeiling(fileContents);
   const traceability = checkTraceability({
     contextMarkdown: input.contextMarkdown,
     codeFiles: input.codeFiles,
@@ -380,7 +417,8 @@ export function runSensors(input = {}) {
     requiredSections.length === 0 &&
     claimSources.length === 0 &&
     readPathPurity.length === 0 &&
-    benchmarkEmpiricalPurity.length === 0;
+    benchmarkEmpiricalPurity.length === 0 &&
+    fileSizeCeiling.length === 0;
 
   return Object.freeze({
     passed,
@@ -389,6 +427,7 @@ export function runSensors(input = {}) {
       claimSources,
       readPathPurity,
       benchmarkEmpiricalPurity,
+      fileSizeCeiling,
       traceability
     })
   });
