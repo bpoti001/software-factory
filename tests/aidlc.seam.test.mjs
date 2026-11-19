@@ -12,6 +12,7 @@ import {
   checkClaimSources,
   checkReadPathPurity,
   checkLatexCitationBijection,
+  checkBenchmarkEmpiricalPurity,
 } from '../src/modules/sensors/index.mjs';
 import {
   recordLearnedRule,
@@ -208,4 +209,25 @@ def search_query(q):
   assert.equal(driftReport.passed, false);
   assert.deepEqual(driftReport.missingInBib, ['ghost2026']);
   assert.deepEqual(driftReport.uncitedInBib, ['orphan2020']);
+
+  const hardcodedBench = `
+def run_suite():
+    curves = {"Prism-ANN": {"recall_at_10": [0.912, 0.968, 0.985, 0.994]}}
+    "p99_latency_ms": [2.15, 2.94, 4.12, 5.85]
+`;
+  const liveBench = `
+def run_suite(index, queries):
+    recalls = [evaluate_recall(index.search(q)) for q in queries]
+    return {"recall_at_10": float(np.mean(recalls))}
+`;
+  const benchViolations = checkBenchmarkEmpiricalPurity({
+    'run_prism_ann_benchmarks.py': hardcodedBench,
+  });
+  assert.equal(benchViolations.length, 2);
+  assert.ok(benchViolations.every((v) => v.rule === 'no-hardcoded-benchmark-metrics'));
+
+  const cleanBenchViolations = checkBenchmarkEmpiricalPurity({
+    'run_prism_ann_benchmarks.py': liveBench,
+  });
+  assert.equal(cleanBenchViolations.length, 0);
 });

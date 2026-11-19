@@ -218,6 +218,9 @@ function runVerifyCommand(args) {
     for (const p of sensorReport.findings.readPathPurity || []) {
       console.error(`❌ ${p.message}`);
     }
+    for (const b of sensorReport.findings.benchmarkEmpiricalPurity || []) {
+      console.error(`❌ ${b.message}`);
+    }
     process.exit(1);
   }
 

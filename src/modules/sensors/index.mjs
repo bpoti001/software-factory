@@ -10,6 +10,7 @@ export {
   checkTraceability,
   checkReadPathPurity,
   checkLatexCitationBijection,
+  checkBenchmarkEmpiricalPurity,
   emitVerificationReceipt,
   checkVerificationReceipt
 } from './lib/sensors.mjs';

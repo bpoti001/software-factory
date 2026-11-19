@@ -311,6 +311,52 @@ export function checkLatexCitationBijection(input = {}) {
 }
 
 /**
+ * Verifies empirical benchmark purity in benchmark scripts (ADR-0010, ENH-0010).
+ * Scans `run_*benchmark*.py` / `*benchmark*.{py,mjs,js,ts}` for hardcoded multi-element
+ * float literal arrays assigned to empirical metric keys (`recall_at_10`, `p99_latency_ms`,
+ * `p50_latency_ms`, `qps`, `dist_comps`, `curves =`).
+ * @param {Record<string, string>} filesMap
+ */
+export function checkBenchmarkEmpiricalPurity(filesMap = {}) {
+  const violations = [];
+  const BENCHMARK_FILE_REGEX = /(?:^|\/)(?:run_.*benchmark|.*benchmark.*)\.(?:py|mjs|js|ts)$/i;
+  const HARDCODED_METRIC_ARRAY_REGEX =
+    /(?:["']?(?:recall_at_10|p99_latency_ms|p50_latency_ms|qps|dist_comps)["']?\s*[:=]\s*\[\s*\d+\.\d+\s*,\s*\d+\.\d+|\bcurves\s*=\s*\{\s*["'][A-Za-z0-9_-]+["']\s*:\s*\{)/;
+
+  for (const [filePath, content] of Object.entries(filesMap)) {
+    if (typeof content !== 'string') continue;
+    if (
+      !BENCHMARK_FILE_REGEX.test(filePath) ||
+      filePath.startsWith('tests/') ||
+      filePath.includes('.test.')
+    ) {
+      continue;
+    }
+
+    const lines = content.split(/\r?\n/);
+    lines.forEach((lineText, idx) => {
+      const trimmed = lineText.trim();
+      if (trimmed.startsWith('//') || trimmed.startsWith('#') || trimmed.startsWith('*')) {
+        return;
+      }
+      if (HARDCODED_METRIC_ARRAY_REGEX.test(trimmed)) {
+        violations.push(
+          Object.freeze({
+            file: filePath,
+            line: idx + 1,
+            rule: 'no-hardcoded-benchmark-metrics',
+            snippet: trimmed,
+            message: `[Sensor: benchmark-empirical-purity] '${filePath}:${idx + 1}' contains hardcoded empirical metric literals instead of live benchmark execution (ADR-0010, ENH-0010).`,
+          })
+        );
+      }
+    });
+  }
+
+  return Object.freeze(violations);
+}
+
+/**
  * Runs all deterministic artifact sensors across changed files and docs.
  * @param {{
  *   fileContents?: Record<string, string>,
@@ -323,6 +369,7 @@ export function runSensors(input = {}) {
   const requiredSections = checkRequiredSections(fileContents);
   const claimSources = checkClaimSources(fileContents);
   const readPathPurity = checkReadPathPurity(fileContents);
+  const benchmarkEmpiricalPurity = checkBenchmarkEmpiricalPurity(fileContents);
   const traceability = checkTraceability({
     contextMarkdown: input.contextMarkdown,
     codeFiles: input.codeFiles,
@@ -332,7 +379,8 @@ export function runSensors(input = {}) {
   const passed =
     requiredSections.length === 0 &&
     claimSources.length === 0 &&
-    readPathPurity.length === 0;
+    readPathPurity.length === 0 &&
+    benchmarkEmpiricalPurity.length === 0;
 
   return Object.freeze({
     passed,
@@ -340,6 +388,7 @@ export function runSensors(input = {}) {
       requiredSections,
       claimSources,
       readPathPurity,
+      benchmarkEmpiricalPurity,
       traceability
     })
   });
