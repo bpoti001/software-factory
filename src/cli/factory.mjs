@@ -130,9 +130,10 @@ function runSizeCommand(args) {
   console.log(`   • Recommended Copilot Cmd:  ${decision.recommendedCommand}`);
   if (decision.modelRouting) {
     console.log(
-      `   • Multi-Model Routing:      planner: ${decision.modelRouting.planner} | builder: ${decision.modelRouting.builder} | reviewer: ${decision.modelRouting.reviewer} | overseer: ${decision.modelRouting.overseer}`
+      `   • Role Routing:             planner: ${decision.modelRouting.planner} | builder: ${decision.modelRouting.builder} | reviewer: ${decision.modelRouting.reviewer} | overseer: ${decision.modelRouting.overseer}`
     );
-    console.log(`   • Active Lead Pipeline:     ${decision.modelRouting.activeLeadModel}`);
+    console.log(`   • Active Role Pipeline:     ${decision.modelRouting.activeRolePipeline}`);
+    console.log(`   • Model Selection Policy:   ${decision.modelRouting.modelSelection}`);
   }
 }
 
@@ -201,11 +202,12 @@ function runVerifyCommand(args) {
     }
   }
 
-  // Deterministic Artifact Sensors (ADR-0007)
+  // Deterministic Artifact Sensors (ADR-0007, ADR-0010)
   const sensorReport = runSensors({
     fileContents,
     contextMarkdown,
-    codeFiles: changedFiles
+    codeFiles: changedFiles,
+    cwd: repoRoot,
   });
 
   if (!sensorReport.passed) {
@@ -223,6 +225,15 @@ function runVerifyCommand(args) {
     }
     for (const c of sensorReport.findings.fileSizeCeiling || []) {
       console.error(`❌ ${c.message}`);
+    }
+    for (const d of sensorReport.findings.dynamicReportInterpolation || []) {
+      console.error(`❌ ${d.message}`);
+    }
+    for (const s of sensorReport.findings.noScriptedVerdicts || []) {
+      console.error(`❌ ${s.message}`);
+    }
+    for (const r of sensorReport.findings.rawRecordProvenance || []) {
+      console.error(`❌ ${r.message}`);
     }
     process.exit(1);
   }
@@ -748,8 +759,9 @@ function runNudgeCommand(args) {
 
   console.log('🛰️  [Factory Overseer Audit & Nudge Loop] Governed by ADR-0010');
   console.log(
-    `   • Multi-Model Tier Routing: planner: ${audit.modelRouting.planner} | builder: ${audit.modelRouting.builder} | reviewer: ${audit.modelRouting.reviewer} | overseer: ${audit.modelRouting.overseer}`
+    `   • Role Routing:             planner: ${audit.modelRouting.planner} | builder: ${audit.modelRouting.builder} | reviewer: ${audit.modelRouting.reviewer} | overseer: ${audit.modelRouting.overseer}`
   );
+  console.log(`   • Model Selection Policy:   ${audit.modelRouting.modelSelection}`);
   console.log(
     `   • Research Skills Bundle:   ${audit.installedSkills.length}/${REQUIRED_RESEARCH_FACTORY_SKILLS.length} installed (${audit.missingSkills.length === 0 ? '✅ 100% READY' : `❌ Missing: ${audit.missingSkills.join(', ')}`})`
   );

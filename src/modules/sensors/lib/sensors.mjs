@@ -311,10 +311,21 @@ export function checkLatexCitationBijection(input = {}) {
 }
 
 /**
- * Verifies empirical benchmark purity in benchmark scripts (ADR-0010, ENH-0010).
- * Scans `run_*benchmark*.py` / `*benchmark*.{py,mjs,js,ts}` for hardcoded multi-element
- * float literal arrays assigned to empirical metric keys (`recall_at_10`, `p99_latency_ms`,
- * `p50_latency_ms`, `qps`, `dist_comps`, `curves =`).
+ * Verifies empirical benchmark purity in benchmark scripts (ADR-0010, ENH-0010, ENH-0014).
+ * Scans `run_*benchmark*.py` / `*benchmark*.{py,mjs,js,ts}` for:
+ *   1. Hardcoded multi-element float literal arrays assigned to empirical metric keys
+ *      (`recall_at_10`, `p99_latency_ms`, `p50_latency_ms`, `qps`, `dist_comps`, `curves =`).
+ *   2. Conservative heuristic detection of formula-derived metric values computed directly
+ *      from loop/sweep variables via arithmetic constants (e.g., `0.0115 * tokens + 2.4`),
+ *      or benchmark functions returning metric dicts without any timing or search/query call.
+ *
+ * Known Limitations (ENH-0014):
+ *   Static regex and single-function heuristics only inspect surface syntax within benchmark
+ *   files. They cannot perform inter-procedural data-flow analysis across imported helpers
+ *   or prove that a timer wraps a real engine rather than an in-memory stub. Therefore,
+ *   `checkRawRecordProvenance` (requiring raw per-query `.jsonl` logs and a deterministic
+ *   recompute script) is the primary provenance safeguard.
+ *
  * @param {Record<string, string>} filesMap
  */
 export function checkBenchmarkEmpiricalPurity(filesMap = {}) {
@@ -322,6 +333,11 @@ export function checkBenchmarkEmpiricalPurity(filesMap = {}) {
   const BENCHMARK_FILE_REGEX = /(?:^|\/)(?:run_.*benchmark|.*benchmark.*)\.(?:py|mjs|js|ts)$/i;
   const HARDCODED_METRIC_ARRAY_REGEX =
     /(?:["']?(?:recall_at_10|p99_latency_ms|p50_latency_ms|qps|dist_comps)["']?\s*[:=]\s*\[\s*\d+\.\d+\s*,\s*\d+\.\d+|\bcurves\s*=\s*\{\s*["'][A-Za-z0-9_-]+["']\s*:\s*\{)/;
+  const FORMULA_DERIVED_METRIC_REGEX =
+    /(?:["']?(?:[a-z0-9_]*latency[a-z0-9_]*|p50[a-z0-9_]*|p99[a-z0-9_]*|recall[a-z0-9_]*|qps[a-z0-9_]*|ram_gb|memory_mb|speedup)["']?\s*[:=]\s*(?:round\s*\(\s*)?(?:\d+\.\d+\s*\*\s*[a-zA-Z_]\w*|[a-zA-Z_]\w*\s*\*\s*\d+\.\d+)(?:\s*[+\-]\s*\d+(?:\.\d+)?)?)/i;
+  const METRIC_OUTPUT_KEY_REGEX = /["'](?:recall_at_10|p99_latency_ms|p50_latency_ms|latency_ms|qps)["']\s*:/;
+  const TIMING_OR_EXEC_CALL_REGEX =
+    /\b(?:perf_counter|time\.time|monotonic|timeit|performance\.now|hrtime|Date\.now|search|query|prune|resolve|scan|evaluate|run_query|execute)\b/;
 
   for (const [filePath, content] of Object.entries(filesMap)) {
     if (typeof content !== 'string') continue;
@@ -349,8 +365,278 @@ export function checkBenchmarkEmpiricalPurity(filesMap = {}) {
             message: `[Sensor: benchmark-empirical-purity] '${filePath}:${idx + 1}' contains hardcoded empirical metric literals instead of live benchmark execution (ADR-0010, ENH-0010).`,
           })
         );
+      } else if (FORMULA_DERIVED_METRIC_REGEX.test(trimmed)) {
+        violations.push(
+          Object.freeze({
+            file: filePath,
+            line: idx + 1,
+            rule: 'no-formula-derived-benchmark-metrics',
+            snippet: trimmed,
+            message: `[Sensor: benchmark-empirical-purity] '${filePath}:${idx + 1}' computes an empirical metric from an arithmetic formula over loop/sweep variables (ADR-0010, ENH-0014).`,
+          })
+        );
       }
     });
+
+    // Conservative function-level heuristic: check benchmark functions that emit metric keys without timing or search calls
+    const fnStarts = [];
+    lines.forEach((lineText, idx) => {
+      if (/^\s*(?:def\s+\w+\s*\(|(?:async\s+)?function\s+\w+\s*\()/.test(lineText)) {
+        fnStarts.push(idx);
+      }
+    });
+    for (let i = 0; i < fnStarts.length; i++) {
+      const startIdx = fnStarts[i];
+      const endIdx = i + 1 < fnStarts.length ? fnStarts[i + 1] : lines.length;
+      const fnBody = lines.slice(startIdx, endIdx).join('\n');
+      if (
+        METRIC_OUTPUT_KEY_REGEX.test(fnBody) &&
+        !TIMING_OR_EXEC_CALL_REGEX.test(fnBody) &&
+        !violations.some((v) => v.file === filePath && v.line >= startIdx + 1 && v.line <= endIdx)
+      ) {
+        violations.push(
+          Object.freeze({
+            file: filePath,
+            line: startIdx + 1,
+            rule: 'no-formula-derived-benchmark-metrics',
+            snippet: lines[startIdx].trim(),
+            message: `[Sensor: benchmark-empirical-purity] '${filePath}:${startIdx + 1}' emits benchmark metric keys without any timing or search/query invocation in the function body (ADR-0010, ENH-0014).`,
+          })
+        );
+      }
+    }
+  }
+
+  return Object.freeze(violations);
+}
+
+/**
+ * Flags hardcoded numeric metric literals inside report-template strings of `*audit*` / `*review*` scripts (ADR-0010, ENH-0013).
+ * Audit and report generators must interpolate every metric from results JSON at run time.
+ *
+ * Known Limitations (ENH-0013):
+ *   Uses a line-level regex heuristic to detect uninterpolated numeric measurements (`98.4%`, `14.2 ms`,
+ *   `623x`, `97.72/100`) inside quoted strings or template lines of audit/review scripts. It cannot detect
+ *   values loaded from a secondary hardcoded constant dictionary in another module.
+ *
+ * @param {Record<string, string>} filesMap
+ */
+export function checkDynamicReportInterpolation(filesMap = {}) {
+  const violations = [];
+  const AUDIT_OR_REVIEW_SCRIPT_REGEX =
+    /(?:^|\/).*(?:audit|review|scholarpeer|paperviz).*\.(?:py|mjs|cjs|js|ts)$/i;
+  const LITERAL_METRIC_IN_TEMPLATE_REGEX =
+    /(?:["'`].*(?<!\{|\$\{)\b\d+\.\d+\s*(?:%|ms\b|x\b|GB\b|MB\b|\/\s*(?:10|100)\b).*["'`]|^\s*[-*|].*(?<!\{|\$\{)\b\d+\.\d+\s*(?:%|ms\b|x\b|\/\s*(?:10|100)\b))/;
+
+  for (const [filePath, content] of Object.entries(filesMap)) {
+    if (typeof content !== 'string') continue;
+    if (
+      !AUDIT_OR_REVIEW_SCRIPT_REGEX.test(filePath) ||
+      filePath.startsWith('tests/') ||
+      filePath.includes('.test.') ||
+      filePath.startsWith('.agents/') ||
+      filePath.startsWith('.github/') ||
+      filePath.startsWith('src/modules/review/') ||
+      filePath.startsWith('src/modules/sensors/')
+    ) {
+      continue;
+    }
+
+    const lines = content.split(/\r?\n/);
+    lines.forEach((lineText, idx) => {
+      const trimmed = lineText.trim();
+      if (trimmed.startsWith('//') || trimmed.startsWith('#') || trimmed.startsWith('*')) {
+        return;
+      }
+      // Remove legitimate runtime interpolation expressions `{...}` and `${...}` before checking for literal metrics
+      const strippedInterpolations = trimmed
+        .replace(/\$\{[^}]+\}/g, 'INTERPOLATED')
+        .replace(/\{[^}]+\}/g, 'INTERPOLATED');
+      if (LITERAL_METRIC_IN_TEMPLATE_REGEX.test(strippedInterpolations)) {
+        violations.push(
+          Object.freeze({
+            file: filePath,
+            line: idx + 1,
+            rule: 'no-literal-metrics-in-report-template',
+            snippet: trimmed,
+            message: `[Sensor: dynamic-report-interpolation] '${filePath}:${idx + 1}' embeds hardcoded numeric metric literals in an audit/review template instead of interpolating from results JSON at run time (ADR-0010, ENH-0013).`,
+          })
+        );
+      }
+    });
+  }
+
+  return Object.freeze(violations);
+}
+
+/**
+ * Fails if any `*audit*` / `*review*` / `*scholarpeer*` / `*paperviz*` script contains literal score
+ * dictionaries (e.g., `"faithfulness": 99.0`) or hardcoded verdict strings (`"STRONG ACCEPT"`, `"Score: 9.0"`) (ADR-0010, ENH-0015).
+ *
+ * @param {Record<string, string>} filesMap
+ */
+export function checkNoScriptedVerdicts(filesMap = {}) {
+  const violations = [];
+  const AUDIT_SCRIPT_REGEX =
+    /(?:^|\/).*(?:audit|review|scholarpeer|paperviz).*\.(?:py|mjs|cjs|js|ts)$/i;
+  const LITERAL_SCORE_DICT_REGEX =
+    /["'](?:faithfulness|conciseness|readability|aesthetics|overall_score|visual_score|peer_score|reviewer_score)["']\s*:\s*\d+(?:\.\d+)?\b/i;
+  const SCRIPTED_VERDICT_STRING_REGEX =
+    /(?:\b(?:STRONG\s+ACCEPT|WEAK\s+ACCEPT|UNCONDITIONAL\s+PASS)\b|\b(?:Overall\s+)?Score:\s*\d+(?:\.\d+)?\s*(?:\/\s*(?:10|100))?)/i;
+
+  for (const [filePath, content] of Object.entries(filesMap)) {
+    if (typeof content !== 'string') continue;
+    if (
+      !AUDIT_SCRIPT_REGEX.test(filePath) ||
+      filePath.startsWith('tests/') ||
+      filePath.includes('.test.') ||
+      filePath.startsWith('.agents/') ||
+      filePath.startsWith('.github/') ||
+      filePath.startsWith('src/modules/review/') ||
+      filePath.startsWith('src/modules/sensors/')
+    ) {
+      continue;
+    }
+
+    const lines = content.split(/\r?\n/);
+    lines.forEach((lineText, idx) => {
+      const trimmed = lineText.trim();
+      if (trimmed.startsWith('//') || trimmed.startsWith('#') || trimmed.startsWith('*')) {
+        return;
+      }
+      if (LITERAL_SCORE_DICT_REGEX.test(trimmed) || SCRIPTED_VERDICT_STRING_REGEX.test(trimmed)) {
+        violations.push(
+          Object.freeze({
+            file: filePath,
+            line: idx + 1,
+            rule: 'no-scripted-audit-verdict',
+            snippet: trimmed,
+            message: `[Sensor: no-scripted-verdicts] '${filePath}:${idx + 1}' contains a hardcoded score dictionary or scripted verdict string (ADR-0010, ENH-0015).`,
+          })
+        );
+      }
+    });
+  }
+
+  return Object.freeze(violations);
+}
+
+/**
+ * Recursively finds summary JSON files under `results/` (excluding `raw/`).
+ * @param {string} resultsDir
+ * @returns {string[]}
+ */
+function findResultsSummaryJsonFiles(resultsDir) {
+  if (!fs.existsSync(resultsDir)) return [];
+  const found = [];
+  const stack = [resultsDir];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    const entries = fs.readdirSync(current, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name !== 'raw' && entry.name !== 'review') {
+          stack.push(fullPath);
+        }
+      } else if (
+        entry.isFile() &&
+        entry.name.endsWith('.json') &&
+        /(?:summary|_results|benchmark)/i.test(entry.name) &&
+        !/(?:audit|review|paperviz|scholarpeer|receipt)/i.test(entry.name)
+      ) {
+        found.push(fullPath);
+      }
+    }
+  }
+  return found.sort();
+}
+
+/**
+ * Verifies raw-record provenance for any results summary JSON in a repository (ADR-0010, ENH-0014).
+ * If a repository has a results summary JSON (`results/<dir>/summary*.json` or `results/<dir>/*_results.json`),
+ * requires:
+ *   1. A sibling `raw/` directory containing at least one non-empty `*.jsonl` raw record file.
+ *   2. A recompute script (`bench/recompute.py`, `scripts/recompute.py`, `recompute.py`, or sibling `recompute.*`).
+ *   3. The summary JSON's mtime must not be newer than every raw `*.jsonl` file (which happens when a
+ *      summary JSON is hand-edited or fabricated post-hoc without raw record provenance).
+ *
+ * @param {{ cwd?: string }} [options]
+ */
+export function checkRawRecordProvenance(options = {}) {
+  const cwd = path.resolve(options.cwd || process.cwd());
+  const resultsDir = path.join(cwd, 'results');
+  const summaryFiles = findResultsSummaryJsonFiles(resultsDir);
+  if (summaryFiles.length === 0) {
+    return Object.freeze([]);
+  }
+
+  const violations = [];
+  const candidateRecomputePaths = [
+    path.join(cwd, 'bench', 'recompute.py'),
+    path.join(cwd, 'bench', 'recompute.mjs'),
+    path.join(cwd, 'scripts', 'recompute.py'),
+    path.join(cwd, 'scripts', 'recompute.mjs'),
+    path.join(cwd, 'recompute.py'),
+    path.join(cwd, 'recompute.mjs'),
+  ];
+
+  for (const summaryAbsPath of summaryFiles) {
+    const relSummary = path.relative(cwd, summaryAbsPath);
+    const summaryDir = path.dirname(summaryAbsPath);
+    const rawDir = path.join(summaryDir, 'raw');
+    const siblingRecomputePy = path.join(summaryDir, 'recompute.py');
+    const siblingRecomputeMjs = path.join(summaryDir, 'recompute.mjs');
+
+    const hasRecomputeScript =
+      candidateRecomputePaths.some((p) => fs.existsSync(p)) ||
+      fs.existsSync(siblingRecomputePy) ||
+      fs.existsSync(siblingRecomputeMjs);
+
+    if (!hasRecomputeScript) {
+      violations.push(
+        Object.freeze({
+          file: relSummary,
+          rule: 'missing-recompute-script',
+          message: `[Sensor: raw-record-provenance] Summary '${relSummary}' has no recompute script (expected bench/recompute.py or sibling recompute.py) to verify summary metrics from raw JSONL logs (ADR-0010, ENH-0014).`,
+        })
+      );
+    }
+
+    const rawJsonlFiles =
+      fs.existsSync(rawDir) && fs.statSync(rawDir).isDirectory()
+        ? fs
+            .readdirSync(rawDir)
+            .filter((f) => f.endsWith('.jsonl'))
+            .map((f) => path.join(rawDir, f))
+            .filter((full) => fs.statSync(full).isFile() && fs.statSync(full).size > 0)
+        : [];
+
+    if (rawJsonlFiles.length === 0) {
+      violations.push(
+        Object.freeze({
+          file: relSummary,
+          rule: 'missing-raw-jsonl-records',
+          message: `[Sensor: raw-record-provenance] Summary '${relSummary}' is missing a sibling 'raw/*.jsonl' directory of per-query raw execution logs (ADR-0010, ENH-0014).`,
+        })
+      );
+      continue;
+    }
+
+    const summaryMtimeMs = fs.statSync(summaryAbsPath).mtimeMs;
+    const maxRawMtimeMs = Math.max(...rawJsonlFiles.map((f) => fs.statSync(f).mtimeMs));
+
+    if (summaryMtimeMs > maxRawMtimeMs) {
+      violations.push(
+        Object.freeze({
+          file: relSummary,
+          rule: 'summary-newer-than-raw-records',
+          summaryMtimeMs,
+          maxRawMtimeMs,
+          message: `[Sensor: raw-record-provenance] Summary '${relSummary}' mtime is newer than every raw/*.jsonl file, indicating summary.json was modified after raw records were logged (ADR-0010, ENH-0014).`,
+        })
+      );
+    }
   }
 
   return Object.freeze(violations);
@@ -397,7 +683,8 @@ export function checkFileSizeCeiling(filesMap = {}, maxLines = 1000) {
  * @param {{
  *   fileContents?: Record<string, string>,
  *   contextMarkdown?: string,
- *   codeFiles?: string[]
+ *   codeFiles?: string[],
+ *   cwd?: string
  * }} input
  */
 export function runSensors(input = {}) {
@@ -407,6 +694,9 @@ export function runSensors(input = {}) {
   const readPathPurity = checkReadPathPurity(fileContents);
   const benchmarkEmpiricalPurity = checkBenchmarkEmpiricalPurity(fileContents);
   const fileSizeCeiling = checkFileSizeCeiling(fileContents);
+  const dynamicReportInterpolation = checkDynamicReportInterpolation(fileContents);
+  const noScriptedVerdicts = checkNoScriptedVerdicts(fileContents);
+  const rawRecordProvenance = input.cwd ? checkRawRecordProvenance({ cwd: input.cwd }) : Object.freeze([]);
   const traceability = checkTraceability({
     contextMarkdown: input.contextMarkdown,
     codeFiles: input.codeFiles,
@@ -418,7 +708,10 @@ export function runSensors(input = {}) {
     claimSources.length === 0 &&
     readPathPurity.length === 0 &&
     benchmarkEmpiricalPurity.length === 0 &&
-    fileSizeCeiling.length === 0;
+    fileSizeCeiling.length === 0 &&
+    dynamicReportInterpolation.length === 0 &&
+    noScriptedVerdicts.length === 0 &&
+    rawRecordProvenance.length === 0;
 
   return Object.freeze({
     passed,
@@ -428,6 +721,9 @@ export function runSensors(input = {}) {
       readPathPurity,
       benchmarkEmpiricalPurity,
       fileSizeCeiling,
+      dynamicReportInterpolation,
+      noScriptedVerdicts,
+      rawRecordProvenance,
       traceability
     })
   });

@@ -12,6 +12,9 @@ export {
   checkLatexCitationBijection,
   checkBenchmarkEmpiricalPurity,
   checkFileSizeCeiling,
+  checkDynamicReportInterpolation,
+  checkRawRecordProvenance,
+  checkNoScriptedVerdicts,
   emitVerificationReceipt,
   checkVerificationReceipt
 } from './lib/sensors.mjs';

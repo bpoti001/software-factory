@@ -95,9 +95,9 @@ test('Sizing Seam [ADR-0002]: Safety Escalation Guard overrides [S] to Large [L]
   assert.equal(result.hardStopForAdrOrRfc, true);
 });
 
-test('Sizing Seam [ADR-0010]: classifyTaskSize and resolveModelRouting output explicit Multi-Model Tier Routing and research Intent Profile', () => {
+test('Sizing Seam [ADR-0010, ENH-0016]: classifyTaskSize and resolveModelRouting output honest role descriptions, invocation-time modelSelection, and research Intent Profile', () => {
   const researchTask = classifyTaskSize({
-    prompt: 'Formalize Theorem 2 recall lower bound and run arXiv ablation hypothesis H2',
+    prompt: 'Formalize Proposition 2 recall lower bound and run arXiv ablation hypothesis H2',
     changedFiles: ['docs/adr/0010-multi-model-autoresearch-and-overseer-governance.md'],
   });
 
@@ -105,15 +105,17 @@ test('Sizing Seam [ADR-0010]: classifyTaskSize and resolveModelRouting output ex
   assert.equal(researchTask.profile, 'research');
   assert.equal(researchTask.depth, 'comprehensive');
   assert.equal(researchTask.testStrategy, 'comprehensive');
-  assert.equal(researchTask.modelRouting.planner, 'Argon (High Thinking)');
-  assert.equal(researchTask.modelRouting.builder, 'Hydrogen (High Thinking)');
-  assert.equal(researchTask.modelRouting.reviewer, 'Neon (High Thinking)');
-  assert.equal(researchTask.modelRouting.overseer, 'Factory Overseer');
-  assert.match(researchTask.modelRouting.activeLeadModel, /Argon \(High Thinking\)/);
+  assert.match(researchTask.modelRouting.planner, /@architect/);
+  assert.match(researchTask.modelRouting.builder, /@engineer/);
+  assert.match(researchTask.modelRouting.reviewer, /@pr-reviewer/);
+  assert.match(researchTask.modelRouting.overseer, /@factory-overseer/);
+  assert.match(researchTask.modelRouting.modelSelection, /invocation time/i);
+  assert.match(researchTask.modelRouting.activeRolePipeline, /planner.*builder.*reviewer/);
 
   const routingM = resolveModelRouting('M', 'feature');
-  assert.equal(routingM.planner, 'Argon (High Thinking)');
-  assert.equal(routingM.builder, 'Hydrogen (High Thinking)');
-  assert.equal(routingM.reviewer, 'Neon (High Thinking)');
-  assert.equal(routingM.overseer, 'Factory Overseer');
+  assert.match(routingM.planner, /@architect/);
+  assert.match(routingM.builder, /@engineer/);
+  assert.match(routingM.reviewer, /@pr-reviewer/);
+  assert.match(routingM.overseer, /@factory-overseer/);
+  assert.match(routingM.modelSelection, /inherit.*pro/i);
 });

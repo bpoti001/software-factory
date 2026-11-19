@@ -14,6 +14,9 @@ import {
   checkLatexCitationBijection,
   checkBenchmarkEmpiricalPurity,
   checkFileSizeCeiling,
+  checkDynamicReportInterpolation,
+  checkRawRecordProvenance,
+  checkNoScriptedVerdicts,
 } from '../src/modules/sensors/index.mjs';
 import {
   recordLearnedRule,
@@ -171,7 +174,25 @@ test('Review [ADR-0007]: assessMergeDanger enforces operations rollback plan for
   assert.equal(oneWayWithPlan.operationsGate.passed, true);
 });
 
-test('Sensors [ADR-0010, ENH-0007, ENH-0008]: checkReadPathPurity and checkLatexCitationBijection enforce research integrity', () => {
+test('Sensors [ADR-0010, ENH-0007]: checkLatexCitationBijection enforces 1:1 bijection between \\cite{} and \\bibitem/BibTeX', () => {
+  const bijectiveReport = checkLatexCitationBijection({
+    texContent:
+      'We compare against HNSW \\cite{malkov2018hnsw, patel2024acorn}.\n\\bibitem{malkov2018hnsw} Malkov 2018.\n\\bibitem{patel2024acorn} Patel 2024.',
+  });
+  assert.equal(bijectiveReport.passed, true);
+  assert.deepEqual(bijectiveReport.missingInBib, []);
+  assert.deepEqual(bijectiveReport.uncitedInBib, []);
+
+  const driftReport = checkLatexCitationBijection({
+    texContent:
+      'We cite \\cite{malkov2018hnsw, ghost2026}.\n\\bibitem{malkov2018hnsw} Malkov.\n\\bibitem{orphan2020} Orphan.',
+  });
+  assert.equal(driftReport.passed, false);
+  assert.deepEqual(driftReport.missingInBib, ['ghost2026']);
+  assert.deepEqual(driftReport.uncitedInBib, ['orphan2020']);
+});
+
+test('Sensors [ADR-0010, ENH-0008]: checkReadPathPurity flags global RNG seed mutations and synthetic counter offsets in modules', () => {
   const dirtyModule = `
 def search_query(q):
     random.seed(42)
@@ -196,42 +217,47 @@ def search_query(q):
     'src/modules/retrieval/lib/engine.py': cleanModule,
   });
   assert.equal(cleanViolations.length, 0);
+});
 
-  const bijectiveReport = checkLatexCitationBijection({
-    texContent: 'We compare against HNSW \\cite{malkov2018hnsw, patel2024acorn}.\n\\bibitem{malkov2018hnsw} Malkov 2018.\n\\bibitem{patel2024acorn} Patel 2024.',
-  });
-  assert.equal(bijectiveReport.passed, true);
-  assert.deepEqual(bijectiveReport.missingInBib, []);
-  assert.deepEqual(bijectiveReport.uncitedInBib, []);
-
-  const driftReport = checkLatexCitationBijection({
-    texContent: 'We cite \\cite{malkov2018hnsw, ghost2026}.\n\\bibitem{malkov2018hnsw} Malkov.\n\\bibitem{orphan2020} Orphan.',
-  });
-  assert.equal(driftReport.passed, false);
-  assert.deepEqual(driftReport.missingInBib, ['ghost2026']);
-  assert.deepEqual(driftReport.uncitedInBib, ['orphan2020']);
-
+test('Sensors [ADR-0010, ENH-0010, ENH-0014]: checkBenchmarkEmpiricalPurity flags hardcoded metric arrays and formula-derived benchmark metrics', () => {
   const hardcodedBench = `
 def run_suite():
     curves = {"Prism-ANN": {"recall_at_10": [0.912, 0.968, 0.985, 0.994]}}
     "p99_latency_ms": [2.15, 2.94, 4.12, 5.85]
 `;
+  const formulaBench = `
+def run_h1_formula(tokens, n_docs):
+    latency_ms = 0.0115 * tokens + 2.4
+    revocation_latency = 4.28 * n_docs
+    return {"p99_latency_ms": latency_ms}
+`;
   const liveBench = `
 def run_suite(index, queries):
-    recalls = [evaluate_recall(index.search(q)) for q in queries]
-    return {"recall_at_10": float(np.mean(recalls))}
+    t0 = time.perf_counter()
+    recalls = [evaluate(index.search(q)) for q in queries]
+    elapsed_ms = (time.perf_counter() - t0) * 1000.0
+    return {"recall_at_10": float(np.mean(recalls)), "p99_latency_ms": elapsed_ms}
 `;
-  const benchViolations = checkBenchmarkEmpiricalPurity({
+
+  const arrayViolations = checkBenchmarkEmpiricalPurity({
     'run_prism_ann_benchmarks.py': hardcodedBench,
   });
-  assert.equal(benchViolations.length, 2);
-  assert.ok(benchViolations.every((v) => v.rule === 'no-hardcoded-benchmark-metrics'));
+  assert.ok(arrayViolations.length >= 2);
+  assert.ok(arrayViolations.some((v) => v.rule === 'no-hardcoded-benchmark-metrics'));
+
+  const formulaViolations = checkBenchmarkEmpiricalPurity({
+    'run_prism_ann_benchmarks.py': formulaBench,
+  });
+  assert.ok(formulaViolations.length >= 2);
+  assert.ok(formulaViolations.every((v) => v.rule === 'no-formula-derived-benchmark-metrics'));
 
   const cleanBenchViolations = checkBenchmarkEmpiricalPurity({
     'run_prism_ann_benchmarks.py': liveBench,
   });
   assert.equal(cleanBenchViolations.length, 0);
+});
 
+test('Sensors [ADR-0010, ENH-0012]: checkFileSizeCeiling enforces the 1,000-line Thermo-Nuclear file size limit', () => {
   const oversizedCode = Array.from({ length: 1005 }, (_, i) => `const x${i} = ${i};`).join('\n');
   const ceilingViolations = checkFileSizeCeiling({
     'src/modules/bloated/lib/monolith.mjs': oversizedCode,
@@ -240,4 +266,100 @@ def run_suite(index, queries):
   assert.equal(ceilingViolations.length, 1);
   assert.equal(ceilingViolations[0].file, 'src/modules/bloated/lib/monolith.mjs');
   assert.equal(ceilingViolations[0].rule, 'thermo-nuclear-file-size-ceiling');
+});
+
+test('Sensors [ADR-0010, ENH-0013]: checkDynamicReportInterpolation flags hardcoded numeric metric literals in audit and report templates', () => {
+  const hardcodedReportScript = `
+def generate_audit_markdown(data):
+    line1 = "Prism-ANN achieves 97.8% recall at 14.23 ms p99 latency and 623.5x speedup."
+    return line1
+`;
+  const interpolatedReportScript = `
+def generate_audit_markdown(data):
+    line1 = f"Prism-ANN achieves {data['recall']:.1f}% recall at {data['p99_ms']:.2f} ms p99 latency."
+    return line1
+`;
+
+  const violations = checkDynamicReportInterpolation({
+    'run_prism_paperviz_audit.py': hardcodedReportScript,
+  });
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].rule, 'no-literal-metrics-in-report-template');
+
+  const clean = checkDynamicReportInterpolation({
+    'run_prism_paperviz_audit.py': interpolatedReportScript,
+  });
+  assert.equal(clean.length, 0);
+});
+
+test('Sensors [ADR-0010, ENH-0014]: checkRawRecordProvenance requires sibling raw/*.jsonl records, a recompute script, and valid mtime ordering', () => {
+  const tmpRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'sf-provenance-'));
+  try {
+    const resultsDir = path.join(tmpRepo, 'results');
+    fs.mkdirSync(resultsDir, { recursive: true });
+    const summaryPath = path.join(resultsDir, 'summary.json');
+    fs.writeFileSync(summaryPath, JSON.stringify({ recall_at_10: 0.95 }), 'utf8');
+
+    // Case 1: Missing both raw/*.jsonl and recompute script
+    const v1 = checkRawRecordProvenance({ cwd: tmpRepo });
+    assert.ok(v1.some((v) => v.rule === 'missing-recompute-script'));
+    assert.ok(v1.some((v) => v.rule === 'missing-raw-jsonl-records'));
+
+    // Case 2: Add bench/recompute.py and results/raw/run.jsonl, but make summary.json newer than raw/run.jsonl
+    const benchDir = path.join(tmpRepo, 'bench');
+    const rawDir = path.join(resultsDir, 'raw');
+    fs.mkdirSync(benchDir, { recursive: true });
+    fs.mkdirSync(rawDir, { recursive: true });
+    fs.writeFileSync(path.join(benchDir, 'recompute.py'), '# recompute\n', 'utf8');
+    const rawFile = path.join(rawDir, 'queries.jsonl');
+    fs.writeFileSync(rawFile, '{"qid":1,"latency_ms":1.23}\n', 'utf8');
+
+    const pastTime = new Date(Date.now() - 60_000);
+    const futureTime = new Date(Date.now() + 10_000);
+    fs.utimesSync(rawFile, pastTime, pastTime);
+    fs.utimesSync(summaryPath, futureTime, futureTime);
+
+    const v2 = checkRawRecordProvenance({ cwd: tmpRepo });
+    assert.equal(v2.length, 1);
+    assert.equal(v2[0].rule, 'summary-newer-than-raw-records');
+
+    // Case 3: Raw file mtime >= summary mtime passes
+    fs.utimesSync(summaryPath, pastTime, pastTime);
+    fs.utimesSync(rawFile, futureTime, futureTime);
+    const v3 = checkRawRecordProvenance({ cwd: tmpRepo });
+    assert.equal(v3.length, 0);
+  } finally {
+    fs.rmSync(tmpRepo, { recursive: true, force: true });
+  }
+});
+
+test('Sensors [ADR-0010, ENH-0015]: checkNoScriptedVerdicts flags literal score dicts and hardcoded verdict strings in audit/review scripts', () => {
+  const scriptedPaperViz = `
+scores = {
+    "faithfulness": 99.0,
+    "conciseness": 97.5,
+    "overall_score": 97.72
+}
+`;
+  const scriptedScholarPeer = `
+def render_verdict():
+    return "Verdict: STRONG ACCEPT (Score: 9.0 / 10)"
+`;
+  const dynamicVerifier = `
+def verify_review_artifact(review_path, expected_sha256):
+    assert os.path.exists(review_path)
+    return True
+`;
+
+  const v1 = checkNoScriptedVerdicts({
+    'run_prism_paperviz_audit.py': scriptedPaperViz,
+    'run_prism_scholarpeer_review.py': scriptedScholarPeer,
+  });
+  assert.ok(v1.length >= 4);
+  assert.ok(v1.every((v) => v.rule === 'no-scripted-audit-verdict'));
+
+  const v2 = checkNoScriptedVerdicts({
+    'run_prism_paperviz_audit.py': dynamicVerifier,
+  });
+  assert.equal(v2.length, 0);
 });

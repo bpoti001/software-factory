@@ -14,7 +14,7 @@ Build and verify the complete ADR-Governed Software Factory across 4 GSD phasesâ
 - [x] **Phase 6: Dogfooding Remediation & Enterprise Hardening** - Multi-line seam parser, git status -uall, two-way ADR parity, honest test verification receipts, test fixture isolation, and GitHub Actions CI (`ADR-0001`, `ADR-0003`, `ADR-0004`, `ADR-0005`, `ADR-0007`) (completed 2026-11-05)
 - [x] **Phase 7: Brownfield Archaeology, Retro-ADR Synthesis & Visual Intelligence Engine** - Deep Codebase X-Ray, Git Archaeology, Evidence-Backed Retro-ADR Synthesizer, 5-Lens Architecture Visualizer, Interactive HTML Explorer, and Cognitive Tour (`ADR-0001`, `ADR-0007`, `ADR-0008`) (completed 2026-11-06)
 - [x] **Phase 8: High-Velocity API Service Scaffolder & Auto-Sync Governance Engine** - 1-command API service generator (`scaffold-api`), 1-command Deep Module generator (`add-module`), 1-command ADR generator (`add-adr`), and automated `CONTEXT.md` / `docs/adr/` synchronizer (`sync`) (`ADR-0001`, `ADR-0004`, `ADR-0009`) (completed 2026-11-10)
-- [x] **Phase 9: Multi-Model Tier Routing, ADR-to-arXiv Autoresearch Bridge & Overseer Governance** - Explicit Multi-Model assignment (`Argon (High Thinking)`, `Hydrogen (High Thinking)`, `Neon (High Thinking)`, `Factory Overseer`), bundled Research & Code-Quality skills in `.agents/skills/`, and `factory nudge` / `factory overseer-audit` CLI (`ADR-0001`, `ADR-0002`, `ADR-0007`, `ADR-0010`) (completed 2026-11-19)
+- [x] **Phase 9: Role-Separated Research Governance, Raw-Record Provenance Sensors & Overseer Nudge Loop** - Honest role routing (`planner`, `builder`, `reviewer`, `overseer` + host `modelSelection`), bundled Research & Marketplace skills in `.agents/skills/`, provenance sensors (`ENH-0007`..`ENH-0016`), and `factory nudge` / `factory overseer-audit` CLI (`ADR-0001`, `ADR-0002`, `ADR-0007`, `ADR-0010`) (completed 2026-11-19)
 
 ## Phase Details
 
@@ -158,22 +158,22 @@ Plans:
 
 - [x] 08-01: Implement `src/modules/scaffolder` and `factory sync|add-module|add-adr|scaffold-api` (`tests/scaffolder.seam.test.mjs`)
 
-### Phase 9: Multi-Model Tier Routing, ADR-to-arXiv Autoresearch Bridge & Overseer Governance
+### Phase 9: Role-Separated Research Governance, Raw-Record Provenance Sensors & Overseer Nudge Loop
 
-**Goal**: Deliver Multi-Model Tier Routing (`Argon (High Thinking)` for Planning/Research, `Hydrogen (High Thinking)` for Build/TDD, `Neon (High Thinking)` for Adversarial Review, `Factory Overseer` for Continuous Factory Self-Improvement), install the 11 Research & Code-Quality skills into `.agents/skills/`, and expose `factory nudge` and `factory overseer-audit` governed by `ADR-0001`, `ADR-0002`, `ADR-0007`, and `ADR-0010`.
+**Goal**: Deliver honest role routing (`planner`, `builder`, `reviewer`, `overseer` with explicit host `modelSelection` documentation), install the 11 Research & Code-Quality skills plus 7 Marketplace plugin skills into `.agents/skills/`, implement provenance and anti-fabrication sensors (`checkLatexCitationBijection`, `checkReadPathPurity`, `checkBenchmarkEmpiricalPurity`, `checkFileSizeCeiling`, `checkDynamicReportInterpolation`, `checkRawRecordProvenance`, `checkNoScriptedVerdicts`), and expose `factory nudge` and `factory overseer-audit` governed by `ADR-0001`, `ADR-0002`, `ADR-0007`, and `ADR-0010`.
 **Depends on**: Phase 8
 **Requirements**: [RES-01, RES-02, RES-03]
 **Success Criteria** (what must be TRUE):
 
-  1. `classifyTaskSize` and `resolveModelRouting` return deterministic `modelRouting` (`planner: Argon (High Thinking)`, `builder: Hydrogen (High Thinking)`, `reviewer: Neon (High Thinking)`, `overseer: Factory Overseer`).
-  2. All 11 Research & Code-Quality skills (`adr-to-arxiv-factory`, `0-autoresearch-skill`, `systems-paper-writing`, `ml-paper-writing`, `academic-plotting`, `brainstorming-research-ideas`, `creative-thinking-for-research`, `blast-radius`, `thermo-nuclear-code-quality-review`, `presenting-conference-talks`, `paper2agent`) are installed in `.agents/skills/`.
-  3. `factory nudge` and `factory overseer-audit` verify skill readiness, multi-model routing, and log provenance-stamped enhancements to `ENHANCEMENT_BACKLOG.md`.
+  1. `classifyTaskSize` and `resolveModelRouting` return honest role descriptions (`planner`, `builder`, `reviewer`, `overseer`) and document in `modelSelection` that the runtime LLM is chosen at subagent invocation time.
+  2. All 11 Research & Code-Quality skills plus 7 Marketplace plugin symlinks are installed in `.agents/skills/`.
+  3. All 7 research integrity & provenance sensors have dedicated unit tests and are wired into `runSensors`.
 
 **Plans**: 1 plan
 
 Plans:
 
-- [x] 09-01: Implement `ADR-0010` Multi-Model Routing, Research Skills bundle, and Overseer CLI (`tests/sizing.seam.test.mjs`, `tests/cli.integration.test.mjs`)
+- [x] 09-01: Implement `ADR-0010` Role Routing, Provenance Sensors, Research Skills bundle, and Overseer CLI (`tests/sizing.seam.test.mjs`, `tests/aidlc.seam.test.mjs`, `tests/cli.integration.test.mjs`)
 
 ## Progress
 
@@ -187,4 +187,4 @@ Plans:
 | 6. Dogfooding Remediation & Enterprise Hardening | 1/1 | Complete | 2026-11-05 |
 | 7. Brownfield Archaeology, Retro-ADR Synthesis & Visual Intelligence Engine | 1/1 | Complete | 2026-11-06 |
 | 8. High-Velocity API Service Scaffolder & Auto-Sync Governance Engine | 1/1 | Complete | 2026-11-10 |
-| 9. Multi-Model Tier Routing, ADR-to-arXiv Autoresearch Bridge & Overseer Governance | 1/1 | Complete | 2026-11-19 |
+| 9. Role-Separated Research Governance, Raw-Record Provenance Sensors & Overseer Nudge Loop | 1/1 | Complete | 2026-11-19 |

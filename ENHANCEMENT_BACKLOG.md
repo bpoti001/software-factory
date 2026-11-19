@@ -6,14 +6,14 @@
 
 ---
 
-## 1. Multi-Model Tier Routing & Active Overseer Configuration (`ADR-0010`)
+## 1. Role Routing & Host Model Selection Configuration (`ADR-0010`, `ENH-0016`)
 
-| Role / Persona | Model Assignment | Active Responsibilities |
+| Role Key | Agent Persona & Responsibilities | Host Model Selection Policy (`modelSelection`) |
 |---|---|---|
-| **Planner / Researcher (`@architect` / `@orchestrator`)** | `Argon (High Thinking)` | Literature recon, Wayfinder maps, `ADR`/`RFC` minting, "Design-It-Twice" trade-offs, Formal Theorems, and Outer-Loop Autoresearch synthesis. |
-| **Builder (`@engineer`)** | `Hydrogen (High Thinking)` | `/show-me` program design blueprints, Deep Module implementation (`src/modules/<domain>/index.mjs`), Vertical Tracer-Bullet TDD, and Inner-Loop benchmarks. |
-| **Adversarial Reviewer (`@pr-reviewer`)** | `Neon (High Thinking)` | Two-Axis Review (`CODING_STANDARDS.md`), Thermo-Nuclear Code Quality Review, Blast Radius, `ScholarPeer` 4-Agent Peer Review, and `PaperVizAgent` audit ($\ge 95/100$). |
-| **Factory Overseer (`@factory-overseer`)** | `Factory Overseer` | Continuous supervision of target repositories (e.g., `/Users/tejap/memory_paper`), skill discovery, sensor hardening, and non-disruptive factory nudges. |
+| `planner` | **Architecture, Literature Recon & Protocol Pre-Registration (`@architect`)** | Chosen by host agent harness at invocation time (e.g., `'inherit'`, `'pro'`, `'flash'`); not selected by factory CLI. |
+| `builder` | **Deep Module Implementation, Seam TDD & Raw-Logged Benchmarks (`@engineer`)** | Chosen by host agent harness at invocation time (e.g., `'inherit'`, `'pro'`, `'flash'`); not selected by factory CLI. |
+| `reviewer` | **Provenance-First Independent Audit & Two-Axis Review (`@pr-reviewer`)** | Chosen by host agent harness at invocation time (e.g., `'inherit'`, `'pro'`, `'flash'`); not selected by factory CLI. |
+| `overseer` | **Continuous Factory Sensor & Governance Maintenance (`@factory-overseer`)** | Chosen by host agent harness at invocation time (e.g., `'inherit'`, `'pro'`, `'flash'`); not selected by factory CLI. |
 
 ---
 
@@ -33,4 +33,7 @@
 | **ENH-0010** | `2026-11-19T17:39:29.973Z` | `@factory-overseer (Academic Integrity Gate)` | Anti-Hardcoded Benchmark Curve Sensor (checkBenchmarkEmpiricalPurity): Deterministically scan benchmark runners (run_*benchmark*.py / *benchmark*.mjs) for hardcoded multi-element float literal arrays assigned to empirical metric keys (recall_at_10, p99_latency_ms, qps, dist_comps, curves) to enforce systems-paper-writing Academic Integrity and require 100% live query execution. | `ADR-0010` | `completed` | `cid:d3ce2caa265edada` |
 | **ENH-0011** | `2026-11-19T18:26:20.484Z` | `@neon-reviewer (Gate 6)` | Full-Sweep Extremum Parity vs. Subsampled LaTeX Tables: When a benchmark sweeps N points while a LaTeX table displays a representative subset, verify_hallucinations must validate that prose range claims match the full-sweep min and max in results/*.json, not just the subsampled table columns. | `ADR-0010` | `completed` | `cid:840947dfd8e55f9f` |
 | **ENH-0012** | `2026-11-19T18:26:20.533Z` | `@neon-reviewer (Gate 6)` | Thermo-Nuclear 1,000-LOC Ceiling Sensor (checkFileSizeCeiling): Deterministically enforce the thermo-nuclear-code-quality-review 1,000-line ceiling in src/modules/sensors/ so any source or benchmark file crossing 1,000 lines fails factory verify. | `ADR-0010` | `completed` | `cid:29fd22c81d557df9` |
-| **ENH-0013** | `2026-11-19T18:53:32.105Z` | `@factory-overseer` | ENH-0013: Dynamically interpolate quantitative metrics inside PaperVizAgent and ScholarPeer audit generators directly from results/*.json to prevent stale pre-rerun numbers | `ADR-0010` | `completed` | `cid:d9d6d9e53217f335` |
+| **ENH-0013** | `2026-11-19T19:23:10.824Z` | `Session Retrospective (Phase 16)` | Dynamic Report Interpolation Sensor (checkDynamicReportInterpolation): Require audit and review generators to interpolate every number from results JSON at run time and flag hardcoded numeric metric literals in report-template strings. | `ADR-0010` | `completed` | `cid:934a054e581ad657` |
+| **ENH-0014** | `2026-11-19T19:23:10.880Z` | `Session Retrospective (Phase 16)` | Raw-Record Provenance & Formula Heuristic Sensor (checkRawRecordProvenance + checkBenchmarkEmpiricalPurity): Require sibling raw/*.jsonl per-query records plus a recompute script for every results summary JSON (failing if summary mtime > max raw mtime), and flag formula-derived benchmark metrics lacking timing or search calls. | `ADR-0010` | `completed` | `cid:013eace0d46f241b` |
+| **ENH-0015** | `2026-11-19T19:23:10.925Z` | `Session Retrospective (Phase 16)` | No-Scripted-Verdicts Sensor (checkNoScriptedVerdicts): Fail verification if any *audit*, *review*, *scholarpeer*, or *paperviz* script contains literal score dictionaries (e.g., faithfulness: 99.0) or hardcoded verdict strings (e.g., STRONG ACCEPT, Score: 9.0). | `ADR-0010` | `completed` | `cid:a8e685bac6bd49f3` |
+| **ENH-0016** | `2026-11-19T19:23:10.969Z` | `Session Retrospective (Phase 16)` | Honest Role Routing & Host Model Selection (resolveModelRouting): Return role descriptions for planner, builder, reviewer, and overseer plus a modelSelection policy documenting that the runtime model ('inherit', 'pro', 'flash') is chosen at subagent invocation time rather than by the factory CLI. | `ADR-0010` | `completed` | `cid:12ef1c2e0ca5e66c` |

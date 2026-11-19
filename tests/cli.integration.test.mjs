@@ -190,7 +190,7 @@ test('CLI Integration [ADR-0009]: factory scaffold-api, add-module, add-adr, and
   }
 });
 
-test('CLI Integration [ADR-0010]: factory overseer-audit and factory nudge verify 11 research skills, Multi-Model Routing, and record backlog nudges', () => {
+test('CLI Integration [ADR-0010, ENH-0016]: factory overseer-audit and factory nudge verify 11 research skills, honest role routing, and record backlog nudges', () => {
   const auditJson = execFileSync(
     process.execPath,
     [cliPath, 'overseer-audit', '--json'],
@@ -201,10 +201,11 @@ test('CLI Integration [ADR-0010]: factory overseer-audit and factory nudge verif
   assert.equal(auditReport.adr0010Present, true);
   assert.equal(auditReport.missingSkills.length, 0);
   assert.equal(auditReport.installedSkills.length, 11);
-  assert.equal(auditReport.modelRouting.planner, 'Argon (High Thinking)');
-  assert.equal(auditReport.modelRouting.builder, 'Hydrogen (High Thinking)');
-  assert.equal(auditReport.modelRouting.reviewer, 'Neon (High Thinking)');
-  assert.equal(auditReport.modelRouting.overseer, 'Factory Overseer');
+  assert.match(auditReport.modelRouting.planner, /@architect/);
+  assert.match(auditReport.modelRouting.builder, /@engineer/);
+  assert.match(auditReport.modelRouting.reviewer, /@pr-reviewer/);
+  assert.match(auditReport.modelRouting.overseer, /@factory-overseer/);
+  assert.match(auditReport.modelRouting.modelSelection, /invocation time/i);
 
   const tmpBacklog = path.join(os.tmpdir(), `sf-overseer-backlog-${Date.now()}.md`);
   try {

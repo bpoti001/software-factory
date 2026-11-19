@@ -89,29 +89,29 @@ function inferIntentProfile(prompt, size) {
 }
 
 /**
- * Resolves the deterministic Multi-Model Tier Routing assignment (ADR-0010).
- * - Planner / Researcher (`@architect` / `@orchestrator`): Argon (High Thinking)
- * - Builder (`@engineer`): Hydrogen (High Thinking)
- * - Adversarial Reviewer (`@pr-reviewer`): Neon (High Thinking)
- * - Continuous Factory Self-Improvement (`@factory-overseer`): Factory Overseer
+ * Resolves the role routing and invocation-time model selection metadata (ADR-0010, ENH-0016).
+ * Note: The Software Factory CLI does not select or switch underlying LLM weights itself;
+ * actual model selection occurs at subagent invocation time in the host harness (e.g., 'inherit', 'pro', 'flash').
  *
  * @param {'S' | 'M' | 'L'} [size='M']
  * @param {string} [profile='feature']
  */
 export function resolveModelRouting(size = 'M', profile = 'feature') {
-  const activeLeadModel =
+  const activeRolePipeline =
     size === 'L' || profile === 'research'
-      ? 'Argon (High Thinking) -> Hydrogen (High Thinking) -> Neon (High Thinking)'
+      ? 'planner (@architect) -> builder (@engineer) -> reviewer (@pr-reviewer)'
       : size === 'M'
-        ? 'Hydrogen (High Thinking) -> Neon (High Thinking)'
-        : 'Hydrogen (High Thinking)';
+        ? 'builder (@engineer) -> reviewer (@pr-reviewer)'
+        : 'builder (@engineer)';
 
   return Object.freeze({
-    planner: 'Argon (High Thinking)',
-    builder: 'Hydrogen (High Thinking)',
-    reviewer: 'Neon (High Thinking)',
-    overseer: 'Factory Overseer',
-    activeLeadModel,
+    planner: 'Architecture, Literature Recon & Protocol Pre-Registration (@architect)',
+    builder: 'Deep Module Implementation, Seam TDD & Raw-Logged Benchmarks (@engineer)',
+    reviewer: 'Provenance-First Independent Audit & Two-Axis Review (@pr-reviewer)',
+    overseer: 'Continuous Factory Sensor & Governance Maintenance (@factory-overseer)',
+    modelSelection:
+      "Chosen by host agent harness at invocation time (e.g., 'inherit', 'pro', 'flash'); not selected by factory CLI",
+    activeRolePipeline,
   });
 }
 

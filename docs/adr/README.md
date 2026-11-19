@@ -15,4 +15,4 @@
 | [ADR-0007](./0007-aidlc-synthesis-architecture.md) | AI-DLC Synthesis Architecture (Intent Profiles, Sensors, Self-Learning Loop, and Verification Receipts) | `accepted` | 2026-11-05 | `CONF-ADR-0007` | `ARCH-8` |
 | [ADR-0008](./0008-brownfield-archaeology-and-visualizer.md) | Brownfield Architecture Archaeology, Evidence-Backed Retro-ADR Synthesis, and Multi-Layer Visual Intelligence | `accepted` | 2026-11-06 | `CONF-ADR-0008` | `ARCH-10` |
 | [ADR-0009](./0009-high-velocity-api-scaffolder-and-auto-sync.md) | High-Velocity API Service Scaffolder, Auto-Sync Living Docs, and Zero-Ceremony Module Generator | `accepted` | 2026-11-10 | `CONF-ADR-0009` | `ARCH-11` |
-| [ADR-0010](./0010-multi-model-autoresearch-and-overseer-governance.md) | Multi-Model Tier Routing, ADR-to-arXiv Autoresearch Bridge, and Continuous Overseer Governance | `accepted` | 2026-11-19 | `CONF-ADR-0010` | `ARCH-12` |
+| [ADR-0010](./0010-multi-model-autoresearch-and-overseer-governance.md) | Role-Separated Research Governance, Raw-Record Empirical Provenance Sensors, and Overseer Nudge Loop | `accepted` | 2026-11-19 | `CONF-ADR-0010` | `ARCH-12` |
