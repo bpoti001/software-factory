@@ -4,7 +4,7 @@
 - **Target Branch**: `main` (or `feat/high-velocity-api-scaffolder` base)
 - **Governing ADRs**: `ADR-0001`, `ADR-0002`, `ADR-0004`, `ADR-0005`, `ADR-0007`, `ADR-0010`
 - **Governing Jira Epic**: `ARCH-12`
-- **Human Review Status**: Ready for human architect review prior to merge (no remote push performed).
+- **Human Review Status**: Pushed to `origin/feat/research-factory-enhancements` for human review and downstream Software Factory self-development.
 
 ---
 
@@ -47,12 +47,12 @@ software_factory/
 | **Door Type (Reversibility)** | **One-Way Door** | Mints `ADR-0010`, extends public Deep Module seams (`src/modules/sizing/index.mjs`, `src/modules/sensors/index.mjs`), and adds CLI subcommands (`nudge`, `overseer-audit`). |
 | **Blast Radius** | **System-Wide** | Touches `sizing`, `sensors`, `cli`, `CONTEXT.md`, `GLOSSARY.md`, `docs/adr/`, `.planning/ROADMAP.md`, and `.agents/skills/`. |
 | **Axis 1: Architecture & Seam Purity** | **PASS (`0` Violations)** | All new sensor and sizing functions are encapsulated inside `src/modules/<domain>/lib/` and exported strictly via named exports in `src/modules/<domain>/index.mjs`. |
-| **Axis 2: Test & Sensor Verification** | **PASS (`56/56` Tests)** | Every new sensor (`ENH-0007` through `ENH-0015`) has its own isolated `test()` block in `tests/aidlc.seam.test.mjs`. |
+| **Axis 2: Test & Sensor Verification** | **PASS (`58/58` Tests)** | Every new sensor (`ENH-0007` through `ENH-0019`) has its own isolated `test()` block in `tests/aidlc.seam.test.mjs`. |
 | **Operations & Rollback Runbook** | **Documented** | Revert branch `feat/research-factory-enhancements` (or `git revert` commit range) and run `node src/cli/factory.mjs verify` to restore the pre-`ADR-0010` 50-test baseline. |
 
 ---
 
-## 3. Complete Enhancement Ledger (`ENH-0001` – `ENH-0016`)
+## 3. Complete Enhancement Ledger (`ENH-0001` – `ENH-0019`)
 
 | ID | Summary | Implementation Location | Dedicated Test |
 |---|---|---|---|
@@ -69,9 +69,12 @@ software_factory/
 | **ENH-0011** | Document full-sweep extremum parity vs. subsampled LaTeX tables. | `ENHANCEMENT_BACKLOG.md` | N/A (policy backlog entry) |
 | **ENH-0012** | `checkFileSizeCeiling`: Enforce the 1,000-line ceiling on source and benchmark files. | `src/modules/sensors/lib/sensors.mjs` | `Sensors [ADR-0010, ENH-0012]` |
 | **ENH-0013** | `checkDynamicReportInterpolation`: Flag hardcoded numeric metric literals in report-template strings of `*audit*` / `*review*` scripts. | `src/modules/sensors/lib/sensors.mjs` | `Sensors [ADR-0010, ENH-0013]` |
-| **ENH-0014** | `checkRawRecordProvenance` + formula heuristic in `checkBenchmarkEmpiricalPurity`: Require sibling `raw/*.jsonl` records + recompute script (failing if `summary.mtime > max(raw.mtime)`), and flag formula-derived metrics lacking timing/search calls. | `src/modules/sensors/lib/sensors.mjs` | `Sensors [ADR-0010, ENH-0014]` |
+| **ENH-0014** | `checkRawRecordProvenance` + formula heuristic in `checkBenchmarkEmpiricalPurity`: Require sibling `raw/*.jsonl` (or paired `raw_<suffix>/`) records + recompute script, and flag formula-derived metrics lacking timing/search calls. | `src/modules/sensors/lib/sensors.mjs` | `Sensors [ADR-0010, ENH-0014]` |
 | **ENH-0015** | `checkNoScriptedVerdicts`: Fail if any `*audit*` / `*review*` / `*scholarpeer*` / `*paperviz*` script contains literal score dicts (`"faithfulness": 99.0`) or verdict strings (`"STRONG ACCEPT"`). | `src/modules/sensors/lib/sensors.mjs` | `Sensors [ADR-0010, ENH-0015]` |
 | **ENH-0016** | Honest Role Routing: `resolveModelRouting` returns role descriptions (`planner`, `builder`, `reviewer`, `overseer`) + `modelSelection` documenting that the host harness chooses the model at invocation time (`'inherit'`, `'pro'`, `'flash'`). | `src/modules/sizing/lib/classifier.mjs`, `ADR-0010`, `GLOSSARY.md` | `Sizing Seam [ADR-0010, ENH-0016]` |
+| **ENH-0017** | `checkUnboundedSubprocessPipe`: Flag long-lived `subprocess.Popen(..., stdout/stderr=subprocess.PIPE)` calls without `.communicate()` (motivated by macOS 64 KB stderr pipe deadlock on SpiceDB). | `src/modules/sensors/lib/sensors.mjs` | `Sensors [ADR-0010, ENH-0017]` |
+| **ENH-0018** | Fix `checkRawRecordProvenance` mtime direction & paired `summary_<suffix>.json` <-> `raw_<suffix>/` resolution so fresh recomputed summaries pass while stale summaries older than `raw/*.jsonl` fail. | `src/modules/sensors/lib/sensors.mjs` | `Sensors [ADR-0010, ENH-0014]` |
+| **ENH-0019** | `checkLatexTemplateHygiene`: Flag leftover `(X)`/`(Y)`/`(Z)`, draft markers, and `XX%` writing-template placeholders in `.tex` manuscripts. | `src/modules/sensors/lib/sensors.mjs` | `Sensors [ADR-0010, ENH-0019]` |
 
 ---
 
@@ -82,9 +85,8 @@ software_factory/
    - A script could evade `checkBenchmarkEmpiricalPurity` by wrapping a synthetic formula inside an imported helper function whose name is not `*benchmark*`, or by calling `time.perf_counter()` around a sleep/stub rather than a real engine.
    - Similarly, `checkDynamicReportInterpolation` strips `{...}` and `${...}` before checking for literal measurements (`98.4%`, `14.2 ms`), so it will not catch a script that loads hardcoded constants from a dict variable and interpolates `{hardcoded_dict['val']}%`.
 2. **File-System Provenance vs. Semantic Ground Truth (`checkRawRecordProvenance`)**:
-   - `checkRawRecordProvenance` verifies that `results/**/summary*.json` has a non-empty sibling `raw/*.jsonl` directory, that a recompute script (`bench/recompute.py`) exists, and that `summary.json` was not modified after the raw `.jsonl` files (`summary.mtimeMs <= maxRawMtimeMs`).
-   - Wait/Note on `mtime` ordering: when a recompute script writes `summary.json` after reading `raw/*.jsonl`, the recompute script must either sync `summary.json`'s timestamp to the latest `raw/*.jsonl` file (`os.utime`) or touch the raw log manifest so `summary.mtimeMs <= maxRawMtimeMs` holds; otherwise, normal recomputation would trigger `summary-newer-than-raw-records`.
-   - Furthermore, `checkRawRecordProvenance` does not execute `bench/recompute.py` or verify that the records inside `raw/*.jsonl` came from a real external database (e.g., FAISS/pgvector/SpiceDB) rather than an in-memory synthetic generator. Executing `bench/recompute.py` and tracing headline numbers back to generating code remain mandatory Gate-6 reviewer tasks.
+   - `checkRawRecordProvenance` verifies that `results/**/summary*.json` has a non-empty sibling `raw/*.jsonl` (or `raw_<suffix>/*.jsonl`) directory, that a recompute script (`bench/recompute.py`) exists, and that `summary.json` is not older than the raw `.jsonl` files (`summary.mtimeMs >= maxRawMtimeMs`, fixed in `ENH-0018`).
+   - Furthermore, `checkRawRecordProvenance` does not execute `bench/recompute.py` or verify that the records inside `raw/*.jsonl` came from a real external database (e.g., FAISS/pgvector/SpiceDB) rather than an in-memory synthetic generator. Executing `bench/recompute.py --check` and tracing headline numbers back to generating code remain mandatory Gate-6 reviewer tasks.
 3. **Citation Key Bijection vs. Upstream Bibliographic Accuracy (`checkLatexCitationBijection`)**:
    - `checkLatexCitationBijection` verifies 1:1 key parity between `\cite{key}` and `\bibitem{key}` / BibTeX entries in local text, but does not query CrossRef, arXiv, or OpenAlex over the network (to preserve `ADR-0004` zero-dependency offline determinism). Upstream author/title/venue verification must be performed during Gate 1 and Gate 6 using the linked `Science` (`literature-search-arxiv`, `literature-search-openalex`) and `Tavily` skills.
 4. **Symlinked Marketplace Skills (`.agents/skills/`)**:
