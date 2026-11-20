@@ -584,7 +584,10 @@ export function checkRawRecordProvenance(options = {}) {
   for (const summaryAbsPath of summaryFiles) {
     const relSummary = path.relative(cwd, summaryAbsPath);
     const summaryDir = path.dirname(summaryAbsPath);
-    const rawDir = path.join(summaryDir, 'raw');
+    const baseName = path.basename(summaryAbsPath, '.json');
+    const suffixMatch = baseName.match(/^summary_(.+)$/);
+    const pairedRawDir = suffixMatch ? path.join(summaryDir, `raw_${suffixMatch[1]}`) : null;
+    const rawDir = pairedRawDir && fs.existsSync(pairedRawDir) ? pairedRawDir : path.join(summaryDir, 'raw');
     const siblingRecomputePy = path.join(summaryDir, 'recompute.py');
     const siblingRecomputeMjs = path.join(summaryDir, 'recompute.mjs');
 
@@ -626,17 +629,88 @@ export function checkRawRecordProvenance(options = {}) {
     const summaryMtimeMs = fs.statSync(summaryAbsPath).mtimeMs;
     const maxRawMtimeMs = Math.max(...rawJsonlFiles.map((f) => fs.statSync(f).mtimeMs));
 
-    if (summaryMtimeMs > maxRawMtimeMs) {
+    // ENH-0018: A derived summary.json is legitimately written *after* raw/*.jsonl completes.
+    // Flag when summary.json is OLDER than raw/*.jsonl (stale summary not yet recomputed).
+    if (summaryMtimeMs < maxRawMtimeMs) {
       violations.push(
         Object.freeze({
           file: relSummary,
-          rule: 'summary-newer-than-raw-records',
+          rule: 'summary-stale-relative-to-raw-records',
           summaryMtimeMs,
           maxRawMtimeMs,
-          message: `[Sensor: raw-record-provenance] Summary '${relSummary}' mtime is newer than every raw/*.jsonl file, indicating summary.json was modified after raw records were logged (ADR-0010, ENH-0014).`,
+          message: `[Sensor: raw-record-provenance] Summary '${relSummary}' is older than raw/*.jsonl records; re-run the recompute script so summary.json matches the latest raw logs (ADR-0010, ENH-0014, ENH-0018).`,
         })
       );
     }
+  }
+
+  return Object.freeze(violations);
+}
+
+/**
+ * Flags long-lived `subprocess.Popen(..., stdout=subprocess.PIPE | stderr=subprocess.PIPE)` calls
+ * without `.communicate()` or a drain thread, preventing OS 64 KB pipe-buffer deadlocks (ADR-0010, ENH-0017).
+ * @param {Record<string, string>} filesMap
+ */
+export function checkUnboundedSubprocessPipe(filesMap = {}) {
+  const violations = [];
+  const PY_FILE_REGEX = /\.py$/i;
+
+  for (const [filePath, content] of Object.entries(filesMap)) {
+    if (typeof content !== 'string') continue;
+    if (!PY_FILE_REGEX.test(filePath) || filePath.startsWith('tests/') || filePath.includes('.test.')) {
+      continue;
+    }
+    if (!/subprocess\.Popen\s*\(/.test(content)) continue;
+    if (/\.communicate\s*\(/.test(content)) continue;
+
+    const lines = content.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      if (!/subprocess\.Popen\s*\(/.test(lines[i])) continue;
+      const callBlock = lines.slice(i, Math.min(lines.length, i + 25)).join('\n');
+      if (/\b(?:stdout|stderr)\s*=\s*subprocess\.PIPE\b/.test(callBlock)) {
+        violations.push(
+          Object.freeze({
+            file: filePath,
+            line: i + 1,
+            rule: 'unbounded-subprocess-pipe',
+            snippet: lines[i].trim(),
+            message: `[Sensor: unbounded-subprocess-pipe] '${filePath}:${i + 1}' uses subprocess.Popen with PIPE without .communicate(); redirect daemon stdout/stderr to a file or subprocess.DEVNULL to avoid 64 KB OS pipe deadlocks (ADR-0010, ENH-0017).`,
+          })
+        );
+      }
+    }
+  }
+
+  return Object.freeze(violations);
+}
+
+/**
+ * Flags leftover writing-template placeholders (`(X)`, `(Y)`, `(Z)`, `TBD`, `XX%`, `[INSERT`) in LaTeX manuscripts (ADR-0010, ENH-0019).
+ * @param {Record<string, string>} filesMap
+ */
+export function checkLatexTemplateHygiene(filesMap = {}) {
+  const violations = [];
+  const PLACEHOLDER_REGEX = /(?:\(\s*\$?[XYZ]\$?\s*\)|\bTBD\b|\bXX\s*\\?%|\[INSERT\b)/;
+
+  for (const [filePath, content] of Object.entries(filesMap)) {
+    if (typeof content !== 'string' || !filePath.endsWith('.tex')) continue;
+    const lines = content.split(/\r?\n/);
+    lines.forEach((lineText, idx) => {
+      const stripped = lineText.replace(/(^|[^\\])%.*$/, '$1').trim();
+      if (!stripped) return;
+      if (PLACEHOLDER_REGEX.test(stripped)) {
+        violations.push(
+          Object.freeze({
+            file: filePath,
+            line: idx + 1,
+            rule: 'latex-template-placeholder',
+            snippet: stripped.slice(0, 120),
+            message: `[Sensor: latex-template-hygiene] '${filePath}:${idx + 1}' contains a leftover writing-template placeholder ((X)/(Y)/(Z), TBD, or XX%) (ADR-0010, ENH-0019).`,
+          })
+        );
+      }
+    });
   }
 
   return Object.freeze(violations);
@@ -696,6 +770,8 @@ export function runSensors(input = {}) {
   const fileSizeCeiling = checkFileSizeCeiling(fileContents);
   const dynamicReportInterpolation = checkDynamicReportInterpolation(fileContents);
   const noScriptedVerdicts = checkNoScriptedVerdicts(fileContents);
+  const unboundedSubprocessPipe = checkUnboundedSubprocessPipe(fileContents);
+  const latexTemplateHygiene = checkLatexTemplateHygiene(fileContents);
   const rawRecordProvenance = input.cwd ? checkRawRecordProvenance({ cwd: input.cwd }) : Object.freeze([]);
   const traceability = checkTraceability({
     contextMarkdown: input.contextMarkdown,
@@ -711,6 +787,8 @@ export function runSensors(input = {}) {
     fileSizeCeiling.length === 0 &&
     dynamicReportInterpolation.length === 0 &&
     noScriptedVerdicts.length === 0 &&
+    unboundedSubprocessPipe.length === 0 &&
+    latexTemplateHygiene.length === 0 &&
     rawRecordProvenance.length === 0;
 
   return Object.freeze({
@@ -723,6 +801,8 @@ export function runSensors(input = {}) {
       fileSizeCeiling,
       dynamicReportInterpolation,
       noScriptedVerdicts,
+      unboundedSubprocessPipe,
+      latexTemplateHygiene,
       rawRecordProvenance,
       traceability
     })

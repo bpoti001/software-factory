@@ -15,6 +15,8 @@ export {
   checkDynamicReportInterpolation,
   checkRawRecordProvenance,
   checkNoScriptedVerdicts,
+  checkUnboundedSubprocessPipe,
+  checkLatexTemplateHygiene,
   emitVerificationReceipt,
   checkVerificationReceipt
 } from './lib/sensors.mjs';

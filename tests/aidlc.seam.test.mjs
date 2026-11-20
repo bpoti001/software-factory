@@ -17,6 +17,8 @@ import {
   checkDynamicReportInterpolation,
   checkRawRecordProvenance,
   checkNoScriptedVerdicts,
+  checkUnboundedSubprocessPipe,
+  checkLatexTemplateHygiene,
 } from '../src/modules/sensors/index.mjs';
 import {
   recordLearnedRule,
@@ -316,16 +318,17 @@ test('Sensors [ADR-0010, ENH-0014]: checkRawRecordProvenance requires sibling ra
 
     const pastTime = new Date(Date.now() - 60_000);
     const futureTime = new Date(Date.now() + 10_000);
-    fs.utimesSync(rawFile, pastTime, pastTime);
-    fs.utimesSync(summaryPath, futureTime, futureTime);
+    // Case 2 (ENH-0018): Summary older than raw records is stale
+    fs.utimesSync(summaryPath, pastTime, pastTime);
+    fs.utimesSync(rawFile, futureTime, futureTime);
 
     const v2 = checkRawRecordProvenance({ cwd: tmpRepo });
     assert.equal(v2.length, 1);
-    assert.equal(v2[0].rule, 'summary-newer-than-raw-records');
+    assert.equal(v2[0].rule, 'summary-stale-relative-to-raw-records');
 
-    // Case 3: Raw file mtime >= summary mtime passes
-    fs.utimesSync(summaryPath, pastTime, pastTime);
-    fs.utimesSync(rawFile, futureTime, futureTime);
+    // Case 3: Derived summary.json written after raw/*.jsonl passes
+    fs.utimesSync(rawFile, pastTime, pastTime);
+    fs.utimesSync(summaryPath, futureTime, futureTime);
     const v3 = checkRawRecordProvenance({ cwd: tmpRepo });
     assert.equal(v3.length, 0);
   } finally {
@@ -362,4 +365,49 @@ def verify_review_artifact(review_path, expected_sha256):
     'run_prism_paperviz_audit.py': dynamicVerifier,
   });
   assert.equal(v2.length, 0);
+});
+
+test('Sensors [ADR-0010, ENH-0017]: checkUnboundedSubprocessPipe flags undrained Popen PIPE on daemon wrappers', () => {
+  const deadlockingDaemon = `
+import subprocess
+def start_spicedb():
+    return subprocess.Popen(
+        ["spicedb", "serve"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+    )
+`;
+  const safeDaemon = `
+import subprocess
+def start_spicedb(log_file):
+    return subprocess.Popen(
+        ["spicedb", "serve"],
+        stdout=subprocess.DEVNULL,
+        stderr=log_file,
+    )
+`;
+  const bad = checkUnboundedSubprocessPipe({ 'bench/engines.py': deadlockingDaemon });
+  assert.equal(bad.length, 1);
+  assert.equal(bad[0].rule, 'unbounded-subprocess-pipe');
+
+  const ok = checkUnboundedSubprocessPipe({ 'bench/engines.py': safeDaemon });
+  assert.equal(ok.length, 0);
+});
+
+test('Sensors [ADR-0010, ENH-0019]: checkLatexTemplateHygiene flags leftover (X)/(Y)/(Z), TBD, and XX% placeholders in .tex files', () => {
+  const dirtyTex = `
+\\section{Introduction}
+\\textbf{Prism-ANN ($X$) is designed for retrieval ($Y$) over HNSW ($Z$).}
+% Commented (X) should be ignored
+`;
+  const cleanTex = `
+\\section{Introduction}
+\\textbf{Prism-ANN is designed for filtered retrieval over HNSW.}
+`;
+  const bad = checkLatexTemplateHygiene({ 'paper/prism_ann.tex': dirtyTex });
+  assert.equal(bad.length, 1);
+  assert.equal(bad[0].rule, 'latex-template-placeholder');
+
+  const ok = checkLatexTemplateHygiene({ 'paper/prism_ann.tex': cleanTex });
+  assert.equal(ok.length, 0);
 });
