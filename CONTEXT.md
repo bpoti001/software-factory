@@ -26,21 +26,23 @@ All packages/modules enforce **Deep Module boundaries** (small public entry poin
 
 | Module / Subsystem | Repository Path | Responsibility & Public Seam | Governing ADRs |
 |---|---|---|---|
-| **Adaptive Sizing Module** | `src/modules/sizing/` | Classifies tasks into `Small [S]`, `Medium [M]`, or `Large [L]` with intent profiles & safety escalation via `src/modules/sizing/index.mjs` | `ADR-0001`, `ADR-0002`, `ADR-0007` |
+| **Adaptive Sizing Module** | `src/modules/sizing/` | Classifies tasks into `Small [S]`, `Medium [M]`, or `Large [L]` with intent profiles, safety escalation, & Role Routing (`planner` / `builder` / `reviewer` / `overseer` + host `modelSelection`) via `src/modules/sizing/index.mjs` | `ADR-0001`, `ADR-0002`, `ADR-0007`, `ADR-0010` |
 | **Governance & Parity Module** | `src/modules/governance/` | Verifies Deep Module seams, structural drift, `CONTEXT.md` <-> `docs/adr/` parity, and Delete-Zone rules via `src/modules/governance/index.mjs` | `ADR-0001`, `ADR-0003`, `ADR-0004` |
-| **Deterministic Sensors Module** | `src/modules/sensors/` | Pre-gate validation (`required-sections`, `traceability`, `claim-sources`, verification receipts) via `src/modules/sensors/index.mjs` | `ADR-0001`, `ADR-0007` |
+| **Deterministic Sensors Module** | `src/modules/sensors/` | Pre-gate validation (`required-sections`, `traceability`, `claim-sources`, verification receipts) via `src/modules/sensors/index.mjs` | `ADR-0001`, `ADR-0007`, `ADR-0010` |
 | **Self-Learning Rule Loop Module** | `src/modules/learning/` | Captures corrections into persistent rules with SHA-256 provenance hashes via `src/modules/learning/index.mjs` | `ADR-0001`, `ADR-0007` |
 | **Practices Discovery & Archaeology Module** | `src/modules/discovery/` | Scans brownfield repositories (`discoverPractices`, `analyzeCodebase`, `mineGitArchaeology`, `synthesizeRetroAdrs`) via `src/modules/discovery/index.mjs` | `ADR-0001`, `ADR-0007`, `ADR-0008` |
 | **Architecture Visualizer & Tour Module** | `src/modules/visualizer/` | Renders 5-lens Mermaid architecture diagrams, interactive HTML explorer, and cognitive `ARCHITECTURE_TOUR.md` via `src/modules/visualizer/index.mjs` | `ADR-0001`, `ADR-0008` |
 | **Two-Axis Review & Merge Danger Module** | `src/modules/review/` | Scores `One-Way` vs `Two-Way Door` Merge Danger + Blast Radius and formats `/visual-pr` Markdown via `src/modules/review/index.mjs` | `ADR-0001`, `ADR-0005`, `ADR-0007` |
 | **GSD Framework Bridge Module** | `src/modules/gsd/`, `.planning/` | Adapter to `gsd-tools.cjs` & `.planning/` ADR traceability verifier via `src/modules/gsd/index.mjs` | `ADR-0001`, `ADR-0006` |
-| **Factory CLI & Git/CI Hooks** | `src/cli/factory.mjs`, `scripts/` | Zero-dependency CLI adapter (`size`, `verify`, `learn`, `discover`, `analyze`, `adr-synthesize`, `visualize`, `pr-report`, `gsd`) & bootstrap scripts | `ADR-0004`, `ADR-0006`, `ADR-0007`, `ADR-0008` |
-| **Agent & Governance Config** | `.github/`, `docs/adr/`, `docs/wayfinder/` | Copilot agents, slash prompts, ADRs, RFCs, Wayfinder maps, coding standards | `ADR-0000`, `ADR-0003` |
+| **High-Velocity API & Governance Scaffolder Module** | `src/modules/scaffolder/` | Scaffolds turnkey API services (`scaffoldApiService`), Deep Modules (`scaffoldDeepModule`), ADRs (`scaffoldAdr`), and auto-syncs `CONTEXT.md` (`syncGovernanceDocs`) via `src/modules/scaffolder/index.mjs` | `ADR-0001`, `ADR-0009` |
+| **Factory CLI & Git/CI Hooks** | `src/cli/factory.mjs`, `scripts/` | Zero-dependency CLI adapter (`size`, `verify`, `sync`, `add-module`, `add-adr`, `scaffold-api`, `spec`, `learn`, `discover`, `analyze`, `adr-synthesize`, `visualize`, `pr-report`, `gsd`, `nudge`, `overseer-audit`) & bootstrap scripts | `ADR-0004`, `ADR-0006`, `ADR-0007`, `ADR-0008`, `ADR-0009`, `ADR-0010` |
+| **Agent, Research Skills & Governance Config** | `.github/`, `.agents/skills/`, `docs/adr/`, `docs/wayfinder/` | Copilot agents, slash prompts, ADR-to-arXiv research skills, ADRs, RFCs, Wayfinder maps, coding standards | `ADR-0000`, `ADR-0003`, `ADR-0010` |
 
 ### Navigation Jump Table ("Where to Look")
 
 | If you need to... | Go to... | Verify with... |
 |---|---|---|
+| Review product requirements & GSD phase traceability | [`docs/PRD.md`](./docs/PRD.md) | [`.planning/REQUIREMENTS.md`](./.planning/REQUIREMENTS.md) & `node src/cli/factory.mjs gsd validate` |
 | Understand domain terms & bounded contexts | [`GLOSSARY.md`](./GLOSSARY.md) | Domain types & seam contracts |
 | Check if an architectural choice is already decided | Section 3 below + Confluence ADR space | [`docs/adr/README.md`](./docs/adr/README.md) & `node src/cli/factory.mjs verify` |
 | Inspect the Wayfinder decision map | [`docs/wayfinder/MAP-0001-software-factory-engine.md`](./docs/wayfinder/MAP-0001-software-factory-engine.md) | [`docs/rfc/RFC-0001-executable-software-factory-engine.md`](./docs/rfc/RFC-0001-executable-software-factory-engine.md) |
@@ -66,6 +68,8 @@ All packages/modules enforce **Deep Module boundaries** (small public entry poin
 | **ADR-0006** | Native GSD Framework Bridge & `.planning/` ADR Traceability | `accepted` | `src/modules/gsd/`, `.planning/` | `CONF-ADR-0006` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0006`) | [`docs/adr/0006-gsd-native-execution-bridge.md`](./docs/adr/0006-gsd-native-execution-bridge.md) | `ARCH-7` |
 | **ADR-0007** | AI-DLC Synthesis Architecture (Intent Profiles, Sensors, Self-Learning Loop, and Verification Receipts) | `accepted` | `src/modules/sizing/`, `src/modules/sensors/`, `src/modules/learning/`, `src/modules/discovery/`, `src/modules/review/` | `CONF-ADR-0007` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0007`) | [`docs/adr/0007-aidlc-synthesis-architecture.md`](./docs/adr/0007-aidlc-synthesis-architecture.md) | `ARCH-8` |
 | **ADR-0008** | Brownfield Architecture Archaeology, Evidence-Backed Retro-ADR Synthesis, and Multi-Layer Visual Intelligence | `accepted` | `src/modules/discovery/`, `src/modules/visualizer/`, `src/cli/factory.mjs` | `CONF-ADR-0008` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0008`) | [`docs/adr/0008-brownfield-archaeology-and-visualizer.md`](./docs/adr/0008-brownfield-archaeology-and-visualizer.md) | `ARCH-10` |
+| **ADR-0009** | High-Velocity API Service Scaffolder, Auto-Sync Living Docs, and Zero-Ceremony Module Generator | `accepted` | `src/modules/scaffolder/`, `src/cli/factory.mjs` | `CONF-ADR-0009` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0009`) | [`docs/adr/0009-high-velocity-api-scaffolder-and-auto-sync.md`](./docs/adr/0009-high-velocity-api-scaffolder-and-auto-sync.md) | `ARCH-11` |
+| **ADR-0010** | Role-Separated Research Governance, Raw-Record Empirical Provenance Sensors, and Overseer Nudge Loop | `accepted` | `src/modules/sizing/`, `src/modules/sensors/`, `src/cli/factory.mjs`, `.agents/skills/` | `CONF-ADR-0010` (`https://your-org.atlassian.net/wiki/spaces/ARCH/pages/0010`) | [`docs/adr/0010-multi-model-autoresearch-and-overseer-governance.md`](./docs/adr/0010-multi-model-autoresearch-and-overseer-governance.md) | `ARCH-12` |
 
 ---
 

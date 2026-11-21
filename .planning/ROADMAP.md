@@ -13,6 +13,8 @@ Build and verify the complete ADR-Governed Software Factory across 4 GSD phasesâ
 - [x] **Phase 5: Amazon AI-DLC Synthesis Architecture & Capability Engine** - Intent profiles, deterministic sensors, self-learning loop, verification receipts, and brownfield discovery (`ADR-0001`, `ADR-0007`) (completed 2026-11-05)
 - [x] **Phase 6: Dogfooding Remediation & Enterprise Hardening** - Multi-line seam parser, git status -uall, two-way ADR parity, honest test verification receipts, test fixture isolation, and GitHub Actions CI (`ADR-0001`, `ADR-0003`, `ADR-0004`, `ADR-0005`, `ADR-0007`) (completed 2026-11-05)
 - [x] **Phase 7: Brownfield Archaeology, Retro-ADR Synthesis & Visual Intelligence Engine** - Deep Codebase X-Ray, Git Archaeology, Evidence-Backed Retro-ADR Synthesizer, 5-Lens Architecture Visualizer, Interactive HTML Explorer, and Cognitive Tour (`ADR-0001`, `ADR-0007`, `ADR-0008`) (completed 2026-11-06)
+- [x] **Phase 8: High-Velocity API Service Scaffolder & Auto-Sync Governance Engine** - 1-command API service generator (`scaffold-api`), 1-command Deep Module generator (`add-module`), 1-command ADR generator (`add-adr`), and automated `CONTEXT.md` / `docs/adr/` synchronizer (`sync`) (`ADR-0001`, `ADR-0004`, `ADR-0009`) (completed 2026-11-10)
+- [x] **Phase 9: Role-Separated Research Governance, Raw-Record Provenance Sensors & Overseer Nudge Loop** - Honest role routing (`planner`, `builder`, `reviewer`, `overseer` + host `modelSelection`), bundled Research & Marketplace skills in `.agents/skills/`, provenance sensors (`ENH-0007`..`ENH-0016`), and `factory nudge` / `factory overseer-audit` CLI (`ADR-0001`, `ADR-0002`, `ADR-0007`, `ADR-0010`) (completed 2026-11-19)
 
 ## Phase Details
 
@@ -138,6 +140,41 @@ Plans:
 
 - [x] 07-01: Build and verify Brownfield Archaeology, Retro-ADR Synthesis & Visual Intelligence Engine (`tests/archaeology-visualizer.seam.test.mjs`)
 
+### Phase 8: High-Velocity API Service Scaffolder & Auto-Sync Governance Engine
+
+**Goal**: Eliminate the multi-day ceremony bottleneck when building API services by delivering `src/modules/scaffolder/index.mjs` (`syncGovernanceDocs`, `scaffoldDeepModule`, `scaffoldAdr`, `scaffoldApiService`) and CLI subcommands (`factory sync`, `factory add-module`, `factory add-adr`, `factory scaffold-api`) governed by `ADR-0001`, `ADR-0004`, and `ADR-0009`.
+**Depends on**: Phase 7
+**Requirements**: [VEL-01, VEL-02, VEL-03, VEL-04]
+**Success Criteria** (what must be TRUE):
+
+  1. `syncGovernanceDocs` (`factory sync`) automatically registers unmapped `src/modules/<name>/` directories in `CONTEXT.md` Section 2 and unindexed `docs/adr/NNNN-*.md` files in `CONTEXT.md` Section 3 and `docs/adr/README.md`.
+  2. `scaffoldDeepModule` (`factory add-module <name>`) creates `src/modules/<name>/index.mjs`, `src/modules/<name>/lib/<name>-service.mjs`, and `tests/<name>.seam.test.mjs` and auto-syncs `CONTEXT.md` in `< 50ms`.
+  3. `scaffoldAdr` (`factory add-adr "<Title>"`) mints a sensor-compliant ADR with all 4 mandatory headings and auto-registers it in `CONTEXT.md` and `docs/adr/README.md`.
+  4. `scaffoldApiService` (`factory scaffold-api`) generates a runnable HTTP JSON API service with `/health` and `/api/<module>` routes, Deep Modules, seam & HTTP integration tests, and clean project-scoped governance in `< 1s`.
+
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 08-01: Implement `src/modules/scaffolder` and `factory sync|add-module|add-adr|scaffold-api` (`tests/scaffolder.seam.test.mjs`)
+
+### Phase 9: Role-Separated Research Governance, Raw-Record Provenance Sensors & Overseer Nudge Loop
+
+**Goal**: Deliver honest role routing (`planner`, `builder`, `reviewer`, `overseer` with explicit host `modelSelection` documentation), install the 11 Research & Code-Quality skills plus 7 Marketplace plugin skills into `.agents/skills/`, implement provenance and anti-fabrication sensors (`checkLatexCitationBijection`, `checkReadPathPurity`, `checkBenchmarkEmpiricalPurity`, `checkFileSizeCeiling`, `checkDynamicReportInterpolation`, `checkRawRecordProvenance`, `checkNoScriptedVerdicts`), and expose `factory nudge` and `factory overseer-audit` governed by `ADR-0001`, `ADR-0002`, `ADR-0007`, and `ADR-0010`.
+**Depends on**: Phase 8
+**Requirements**: [RES-01, RES-02, RES-03]
+**Success Criteria** (what must be TRUE):
+
+  1. `classifyTaskSize` and `resolveModelRouting` return honest role descriptions (`planner`, `builder`, `reviewer`, `overseer`) and document in `modelSelection` that the runtime LLM is chosen at subagent invocation time.
+  2. All 11 Research & Code-Quality skills plus 7 Marketplace plugin symlinks are installed in `.agents/skills/`.
+  3. All 7 research integrity & provenance sensors have dedicated unit tests and are wired into `runSensors`.
+
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 09-01: Implement `ADR-0010` Role Routing, Provenance Sensors, Research Skills bundle, and Overseer CLI (`tests/sizing.seam.test.mjs`, `tests/aidlc.seam.test.mjs`, `tests/cli.integration.test.mjs`)
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
@@ -149,3 +186,5 @@ Plans:
 | 5. Amazon AI-DLC Synthesis Architecture & Capability Engine | 1/1 | Complete    | 2026-11-05 |
 | 6. Dogfooding Remediation & Enterprise Hardening | 1/1 | Complete | 2026-11-05 |
 | 7. Brownfield Archaeology, Retro-ADR Synthesis & Visual Intelligence Engine | 1/1 | Complete | 2026-11-06 |
+| 8. High-Velocity API Service Scaffolder & Auto-Sync Governance Engine | 1/1 | Complete | 2026-11-10 |
+| 9. Role-Separated Research Governance, Raw-Record Provenance Sensors & Overseer Nudge Loop | 1/1 | Complete | 2026-11-19 |

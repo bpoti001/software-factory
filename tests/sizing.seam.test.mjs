@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyTaskSize } from '../src/modules/sizing/index.mjs';
+import { classifyTaskSize, resolveModelRouting } from '../src/modules/sizing/index.mjs';
 
 test('Sizing Seam [ADR-0002]: auto-detects Small [S] for button color change and skips research', () => {
   const result = classifyTaskSize({
@@ -93,4 +93,29 @@ test('Sizing Seam [ADR-0002]: Safety Escalation Guard overrides [S] to Large [L]
   assert.match(result.escalationReason, /package\.json/i);
   assert.equal(result.skipResearch, false);
   assert.equal(result.hardStopForAdrOrRfc, true);
+});
+
+test('Sizing Seam [ADR-0010, ENH-0016]: classifyTaskSize and resolveModelRouting output honest role descriptions, invocation-time modelSelection, and research Intent Profile', () => {
+  const researchTask = classifyTaskSize({
+    prompt: 'Formalize Proposition 2 recall lower bound and run arXiv ablation hypothesis H2',
+    changedFiles: ['docs/adr/0010-multi-model-autoresearch-and-overseer-governance.md'],
+  });
+
+  assert.equal(researchTask.size, 'L');
+  assert.equal(researchTask.profile, 'research');
+  assert.equal(researchTask.depth, 'comprehensive');
+  assert.equal(researchTask.testStrategy, 'comprehensive');
+  assert.match(researchTask.modelRouting.planner, /@architect/);
+  assert.match(researchTask.modelRouting.builder, /@engineer/);
+  assert.match(researchTask.modelRouting.reviewer, /@pr-reviewer/);
+  assert.match(researchTask.modelRouting.overseer, /@factory-overseer/);
+  assert.match(researchTask.modelRouting.modelSelection, /invocation time/i);
+  assert.match(researchTask.modelRouting.activeRolePipeline, /planner.*builder.*reviewer/);
+
+  const routingM = resolveModelRouting('M', 'feature');
+  assert.match(routingM.planner, /@architect/);
+  assert.match(routingM.builder, /@engineer/);
+  assert.match(routingM.reviewer, /@pr-reviewer/);
+  assert.match(routingM.overseer, /@factory-overseer/);
+  assert.match(routingM.modelSelection, /inherit.*pro/i);
 });

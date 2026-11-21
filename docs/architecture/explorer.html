@@ -135,11 +135,11 @@
 
   <section class="kpi-grid">
     <div class="kpi-box">
-      <div class="kpi-value">8</div>
+      <div class="kpi-value">9</div>
       <div class="kpi-label">Bounded Modules</div>
     </div>
     <div class="kpi-box">
-      <div class="kpi-value">33 / 4753</div>
+      <div class="kpi-value">42 / 7638</div>
       <div class="kpi-label">Source Files / Lines</div>
     </div>
     <div class="kpi-box">
@@ -151,7 +151,7 @@
       <div class="kpi-label">Synthesized Retro-ADRs</div>
     </div>
     <div class="kpi-box">
-      <div class="kpi-value">9</div>
+      <div class="kpi-value">21</div>
       <div class="kpi-label">Git Commits Analyzed</div>
     </div>
   </section>
@@ -223,19 +223,19 @@
       <div class="card module-card" data-module="learning">
         <div class="card-header">
           <h3>📦 learning</h3>
-          <span class="badge badge-ok">Depth Ratio: 52.67</span>
+          <span class="badge badge-ok">Depth Ratio: 46.33</span>
         </div>
         <p class="mono-path">Seam: src/modules/learning/index.mjs</p>
         <div class="metrics-row">
-          <span>Lines: <strong>169</strong> (158 hidden)</span>
+          <span>Lines: <strong>295</strong> (278 hidden)</span>
           <span>Fan-In: <strong>0</strong></span>
-          <span>Fan-Out: <strong>0</strong></span>
-          <span>Instability: <strong>0</strong></span>
+          <span>Fan-Out: <strong>1</strong></span>
+          <span>Instability: <strong>1</strong></span>
         </div>
         <div class="exports-box">
-          <strong>Public Exports:</strong> <code class="sym">checkRuleConflict()</code> <code class="sym">recordLearnedRule()</code> <code class="sym">listLearnedRules()</code>
+          <strong>Public Exports:</strong> <code class="sym">checkRuleConflict()</code> <code class="sym">recordLearnedRule()</code> <code class="sym">listLearnedRules()</code> <code class="sym">REQUIRED_RESEARCH_FACTORY_SKILLS()</code> <code class="sym">buildOverseerAuditReport()</code> <code class="sym">recordOverseerNudge()</code>
         </div>
-        <div class="adr-row"><span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0007</span></div>
+        <div class="adr-row"><span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0007</span> <span class="badge badge-adr">ADR-0010</span></div>
       </div>
 
       <div class="card module-card" data-module="review">
@@ -256,40 +256,58 @@
         <div class="adr-row"><span class="badge badge-adr">ADR-0000</span> <span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0003</span> <span class="badge badge-adr">ADR-0005</span> <span class="badge badge-adr">ADR-0007</span></div>
       </div>
 
-      <div class="card module-card" data-module="sensors">
+      <div class="card module-card" data-module="scaffolder">
         <div class="card-header">
-          <h3>📦 sensors</h3>
-          <span class="badge badge-ok">Depth Ratio: 39.17</span>
+          <h3>📦 scaffolder</h3>
+          <span class="badge badge-ok">Depth Ratio: 124.78</span>
         </div>
-        <p class="mono-path">Seam: src/modules/sensors/index.mjs</p>
+        <p class="mono-path">Seam: src/modules/scaffolder/index.mjs</p>
         <div class="metrics-row">
-          <span>Lines: <strong>249</strong> (235 hidden)</span>
-          <span>Fan-In: <strong>0</strong></span>
-          <span>Fan-Out: <strong>1</strong></span>
-          <span>Instability: <strong>1</strong></span>
-        </div>
-        <div class="exports-box">
-          <strong>Public Exports:</strong> <code class="sym">runSensors()</code> <code class="sym">checkRequiredSections()</code> <code class="sym">checkClaimSources()</code> <code class="sym">checkTraceability()</code> <code class="sym">emitVerificationReceipt()</code> <code class="sym">checkVerificationReceipt()</code>
-        </div>
-        <div class="adr-row"><span class="badge badge-adr">ADR-0000</span> <span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0006</span> <span class="badge badge-adr">ADR-0007</span></div>
-      </div>
-
-      <div class="card module-card" data-module="sizing">
-        <div class="card-header">
-          <h3>📦 sizing</h3>
-          <span class="badge badge-ok">Depth Ratio: 208</span>
-        </div>
-        <p class="mono-path">Seam: src/modules/sizing/index.mjs</p>
-        <div class="metrics-row">
-          <span>Lines: <strong>215</strong> (208 hidden)</span>
+          <span>Lines: <strong>1150</strong> (1123 hidden)</span>
           <span>Fan-In: <strong>0</strong></span>
           <span>Fan-Out: <strong>0</strong></span>
           <span>Instability: <strong>0</strong></span>
         </div>
         <div class="exports-box">
-          <strong>Public Exports:</strong> <code class="sym">classifyTaskSize()</code>
+          <strong>Public Exports:</strong> <code class="sym">syncGovernanceDocs()</code> <code class="sym">scaffoldAdr()</code> <code class="sym">scaffoldDeepModule()</code> <code class="sym">writeApiRouter()</code> <code class="sym">initFoundrySpec()</code> <code class="sym">validateFoundrySpec()</code> <code class="sym">compileFoundrySpec()</code> <code class="sym">verifySpecParity()</code> <code class="sym">scaffoldApiService()</code>
         </div>
-        <div class="adr-row"><span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0002</span> <span class="badge badge-adr">ADR-0007</span></div>
+        <div class="adr-row"><span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0003</span> <span class="badge badge-adr">ADR-0004</span> <span class="badge badge-adr">ADR-0009</span></div>
+      </div>
+
+      <div class="card module-card" data-module="sensors">
+        <div class="card-header">
+          <h3>📦 sensors</h3>
+          <span class="badge badge-ok">Depth Ratio: 60.73</span>
+        </div>
+        <p class="mono-path">Seam: src/modules/sensors/index.mjs</p>
+        <div class="metrics-row">
+          <span>Lines: <strong>934</strong> (911 hidden)</span>
+          <span>Fan-In: <strong>0</strong></span>
+          <span>Fan-Out: <strong>1</strong></span>
+          <span>Instability: <strong>1</strong></span>
+        </div>
+        <div class="exports-box">
+          <strong>Public Exports:</strong> <code class="sym">runSensors()</code> <code class="sym">checkRequiredSections()</code> <code class="sym">checkClaimSources()</code> <code class="sym">checkTraceability()</code> <code class="sym">checkReadPathPurity()</code> <code class="sym">checkLatexCitationBijection()</code> <code class="sym">checkBenchmarkEmpiricalPurity()</code> <code class="sym">checkFileSizeCeiling()</code> <code class="sym">checkDynamicReportInterpolation()</code> <code class="sym">checkRawRecordProvenance()</code> <code class="sym">checkNoScriptedVerdicts()</code> <code class="sym">checkUnboundedSubprocessPipe()</code> <code class="sym">checkLatexTemplateHygiene()</code> <code class="sym">emitVerificationReceipt()</code> <code class="sym">checkVerificationReceipt()</code>
+        </div>
+        <div class="adr-row"><span class="badge badge-adr">ADR-0000</span> <span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0006</span> <span class="badge badge-adr">ADR-0007</span> <span class="badge badge-adr">ADR-0010</span></div>
+      </div>
+
+      <div class="card module-card" data-module="sizing">
+        <div class="card-header">
+          <h3>📦 sizing</h3>
+          <span class="badge badge-ok">Depth Ratio: 121</span>
+        </div>
+        <p class="mono-path">Seam: src/modules/sizing/index.mjs</p>
+        <div class="metrics-row">
+          <span>Lines: <strong>249</strong> (242 hidden)</span>
+          <span>Fan-In: <strong>1</strong></span>
+          <span>Fan-Out: <strong>0</strong></span>
+          <span>Instability: <strong>0</strong></span>
+        </div>
+        <div class="exports-box">
+          <strong>Public Exports:</strong> <code class="sym">classifyTaskSize()</code> <code class="sym">resolveModelRouting()</code>
+        </div>
+        <div class="adr-row"><span class="badge badge-adr">ADR-0001</span> <span class="badge badge-adr">ADR-0002</span> <span class="badge badge-adr">ADR-0007</span> <span class="badge badge-adr">ADR-0010</span></div>
       </div>
 
       <div class="card module-card" data-module="visualizer">
@@ -381,7 +399,97 @@
     <tbody>
       
       <tr>
-        <td><code>README.md</code></td>
+        <td><code>src/cli/factory.mjs</code></td>
+        <td>root</td>
+        <td>12</td>
+        <td>0</td>
+        <td><strong>12</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>src/modules/sizing/lib/classifier.mjs</code></td>
+        <td>sizing</td>
+        <td>5</td>
+        <td>1</td>
+        <td><strong>10</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>GLOSSARY.md</code></td>
+        <td>root</td>
+        <td>9</td>
+        <td>0</td>
+        <td><strong>9</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>tests/cli.integration.test.mjs</code></td>
+        <td>root</td>
+        <td>9</td>
+        <td>0</td>
+        <td><strong>9</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>ENHANCEMENT_BACKLOG.md</code></td>
+        <td>root</td>
+        <td>8</td>
+        <td>0</td>
+        <td><strong>8</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>src/modules/sensors/lib/sensors.mjs</code></td>
+        <td>sensors</td>
+        <td>8</td>
+        <td>0</td>
+        <td><strong>8</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>CONTEXT.md</code></td>
+        <td>root</td>
+        <td>8</td>
+        <td>0</td>
+        <td><strong>8</strong></td>
+        <td><span class="badge badge-danger">One-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>docs/adr/README.md</code></td>
+        <td>root</td>
+        <td>8</td>
+        <td>0</td>
+        <td><strong>8</strong></td>
+        <td><span class="badge badge-danger">One-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>.planning/ROADMAP.md</code></td>
+        <td>root</td>
+        <td>7</td>
+        <td>0</td>
+        <td><strong>7</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>src/modules/sensors/index.mjs</code></td>
+        <td>sensors</td>
+        <td>6</td>
+        <td>0</td>
+        <td><strong>6</strong></td>
+        <td><span class="badge badge-ok">Two-Way Door</span></td>
+      </tr>
+
+      <tr>
+        <td><code>tests/aidlc.seam.test.mjs</code></td>
         <td>root</td>
         <td>6</td>
         <td>0</td>
@@ -390,101 +498,11 @@
       </tr>
 
       <tr>
-        <td><code>src/modules/governance/index.mjs</code></td>
-        <td>governance</td>
-        <td>2</td>
-        <td>2</td>
+        <td><code>README.md</code></td>
+        <td>root</td>
+        <td>6</td>
+        <td>0</td>
         <td><strong>6</strong></td>
-        <td><span class="badge badge-danger">One-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>src/modules/governance/lib/adr-registry-parser.mjs</code></td>
-        <td>governance</td>
-        <td>2</td>
-        <td>2</td>
-        <td><strong>6</strong></td>
-        <td><span class="badge badge-danger">One-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>src/modules/governance/lib/drift-checker.mjs</code></td>
-        <td>governance</td>
-        <td>2</td>
-        <td>2</td>
-        <td><strong>6</strong></td>
-        <td><span class="badge badge-danger">One-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>src/modules/governance/lib/seam-checker.mjs</code></td>
-        <td>governance</td>
-        <td>2</td>
-        <td>2</td>
-        <td><strong>6</strong></td>
-        <td><span class="badge badge-danger">One-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>scripts/factory-init.sh</code></td>
-        <td>root</td>
-        <td>4</td>
-        <td>0</td>
-        <td><strong>4</strong></td>
-        <td><span class="badge badge-ok">Two-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>src/cli/factory.mjs</code></td>
-        <td>root</td>
-        <td>4</td>
-        <td>0</td>
-        <td><strong>4</strong></td>
-        <td><span class="badge badge-ok">Two-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>tests/cli.integration.test.mjs</code></td>
-        <td>root</td>
-        <td>4</td>
-        <td>0</td>
-        <td><strong>4</strong></td>
-        <td><span class="badge badge-ok">Two-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>CONTEXT.md</code></td>
-        <td>root</td>
-        <td>4</td>
-        <td>0</td>
-        <td><strong>4</strong></td>
-        <td><span class="badge badge-danger">One-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>GLOSSARY.md</code></td>
-        <td>root</td>
-        <td>4</td>
-        <td>0</td>
-        <td><strong>4</strong></td>
-        <td><span class="badge badge-ok">Two-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>docs/adr/README.md</code></td>
-        <td>root</td>
-        <td>4</td>
-        <td>0</td>
-        <td><strong>4</strong></td>
-        <td><span class="badge badge-danger">One-Way Door</span></td>
-      </tr>
-
-      <tr>
-        <td><code>.planning/ROADMAP.md</code></td>
-        <td>root</td>
-        <td>3</td>
-        <td>0</td>
-        <td><strong>3</strong></td>
         <td><span class="badge badge-ok">Two-Way Door</span></td>
       </tr>
     </tbody>

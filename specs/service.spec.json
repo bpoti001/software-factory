@@ -1,0 +1,221 @@
+{
+  "specVersion": "1.0.0",
+  "serviceName": "foundry-reference-api",
+  "port": 4000,
+  "governingAdr": "ADR-0001",
+  "modules": [
+    {
+      "name": "orders",
+      "entity": "Order",
+      "fields": [
+        {
+          "name": "customerId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "totalCents",
+          "type": "number",
+          "required": true,
+          "min": 1
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "enum": [
+            "pending",
+            "paid",
+            "cancelled"
+          ]
+        }
+      ],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/orders",
+          "action": "listOrders",
+          "statusCodes": [
+            200
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/api/orders/:id",
+          "action": "getOrderById",
+          "statusCodes": [
+            200,
+            404
+          ]
+        },
+        {
+          "method": "POST",
+          "path": "/api/orders",
+          "action": "createOrder",
+          "statusCodes": [
+            201,
+            400,
+            413,
+            422
+          ]
+        }
+      ],
+      "invariants": [
+        "Order.customerId (string) is mandatory at the module & HTTP boundary",
+        "Order.totalCents (number) is mandatory at the module & HTTP boundary",
+        "Order.status (string) is mandatory at the module & HTTP boundary"
+      ],
+      "scenarios": [
+        {
+          "id": "SPEC-ORDERS-01",
+          "given": "a valid Order payload matching the orders field schema",
+          "when": "POST /api/orders is invoked",
+          "then": "returns 201 Created with an immutable Order record and GET /api/orders/:id returns 200"
+        },
+        {
+          "id": "SPEC-ORDERS-02",
+          "given": "an empty or schema-violating Order payload",
+          "when": "POST /api/orders is invoked",
+          "then": "rejects at the boundary with 422 Unprocessable Entity and structured validation errors"
+        }
+      ]
+    },
+    {
+      "name": "payments",
+      "entity": "Payment",
+      "fields": [
+        {
+          "name": "amountCents",
+          "type": "number",
+          "required": true,
+          "min": 1
+        },
+        {
+          "name": "currency",
+          "type": "string",
+          "required": true,
+          "enum": [
+            "USD",
+            "EUR",
+            "GBP"
+          ]
+        }
+      ],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/payments",
+          "action": "listPayments",
+          "statusCodes": [
+            200
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/api/payments/:id",
+          "action": "getPaymentById",
+          "statusCodes": [
+            200,
+            404
+          ]
+        },
+        {
+          "method": "POST",
+          "path": "/api/payments",
+          "action": "createPayment",
+          "statusCodes": [
+            201,
+            400,
+            413,
+            422
+          ]
+        }
+      ],
+      "invariants": [
+        "Payment.amountCents (number) is mandatory at the module & HTTP boundary",
+        "Payment.currency (string) is mandatory at the module & HTTP boundary"
+      ],
+      "scenarios": [
+        {
+          "id": "SPEC-PAYMENTS-01",
+          "given": "a valid Payment payload matching the payments field schema",
+          "when": "POST /api/payments is invoked",
+          "then": "returns 201 Created with an immutable Payment record and GET /api/payments/:id returns 200"
+        },
+        {
+          "id": "SPEC-PAYMENTS-02",
+          "given": "an empty or schema-violating Payment payload",
+          "when": "POST /api/payments is invoked",
+          "then": "rejects at the boundary with 422 Unprocessable Entity and structured validation errors"
+        }
+      ]
+    },
+    {
+      "name": "shipments",
+      "entity": "Shipment",
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "enum": [
+            "active",
+            "archived"
+          ]
+        }
+      ],
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/shipments",
+          "action": "listShipments",
+          "statusCodes": [
+            200
+          ]
+        },
+        {
+          "method": "GET",
+          "path": "/api/shipments/:id",
+          "action": "getShipmentById",
+          "statusCodes": [
+            200,
+            404
+          ]
+        },
+        {
+          "method": "POST",
+          "path": "/api/shipments",
+          "action": "createShipment",
+          "statusCodes": [
+            201,
+            400,
+            413,
+            422
+          ]
+        }
+      ],
+      "invariants": [
+        "Shipment.name (string) is mandatory at the module & HTTP boundary"
+      ],
+      "scenarios": [
+        {
+          "id": "SPEC-SHIPMENTS-01",
+          "given": "a valid Shipment payload matching the shipments field schema",
+          "when": "POST /api/shipments is invoked",
+          "then": "returns 201 Created with an immutable Shipment record and GET /api/shipments/:id returns 200"
+        },
+        {
+          "id": "SPEC-SHIPMENTS-02",
+          "given": "an empty or schema-violating Shipment payload",
+          "when": "POST /api/shipments is invoked",
+          "then": "rejects at the boundary with 422 Unprocessable Entity and structured validation errors"
+        }
+      ]
+    }
+  ]
+}

@@ -7,7 +7,7 @@
 
 ## 1. The 60-Second Mental Model & Core Metaphor
 
-Imagine **`adr-governed-software-factory`** as a coordinated network of **8 encapsulated bounded contexts** running on **`node-esm`** (33 files, 4753 lines of code) organized under a **`deep-modules`** architecture:
+Imagine **`adr-governed-software-factory`** as a coordinated network of **9 encapsulated bounded contexts** running on **`node-esm`** (42 files, 7638 lines of code) organized under a **`deep-modules`** architecture:
 
 - **How to Picture It**: Instead of a tangled monolith where any file can mutate any other file, each subsystem in `adr-governed-software-factory` acts as a **Deep Module** (`ADR-0001`). Callers interact strictly through narrow front doors (`index.*`), while complex algorithms, parsers, and domain rules live inside private `lib/` rooms behind the seam.
 - **Delivery & Persistence**: External callers invoke the system via **`cli`**, while state is governed via **`Living Documentation & Deterministic JSON Artifacts`**.
@@ -34,25 +34,30 @@ Below is the complete inventory of subsystems currently built and active in `adr
   - **Coupling Profile**: Fan-In `0` (dependents) | Fan-Out `1` (dependencies) | Instability `1`
   - **Governing ADRs**: `ADR-0001`, `ADR-0006`
 - **`learning` Module (`src/modules/learning`)**:
-  - **Public Seam**: `src/modules/learning/index.mjs` -> exports `checkRuleConflict()`, `recordLearnedRule()`, `listLearnedRules()`
-  - **Encapsulation Depth**: 169 total lines (158 hidden inside 1 internal file(s); **Depth Ratio: 52.67**)
-  - **Coupling Profile**: Fan-In `0` (dependents) | Fan-Out `0` (dependencies) | Instability `0`
-  - **Governing ADRs**: `ADR-0001`, `ADR-0007`
+  - **Public Seam**: `src/modules/learning/index.mjs` -> exports `checkRuleConflict()`, `recordLearnedRule()`, `listLearnedRules()`, `REQUIRED_RESEARCH_FACTORY_SKILLS()`, `buildOverseerAuditReport()`, `recordOverseerNudge()`
+  - **Encapsulation Depth**: 295 total lines (278 hidden inside 2 internal file(s); **Depth Ratio: 46.33**)
+  - **Coupling Profile**: Fan-In `0` (dependents) | Fan-Out `1` (dependencies) | Instability `1`
+  - **Governing ADRs**: `ADR-0001`, `ADR-0007`, `ADR-0010`
 - **`review` Module (`src/modules/review`)**:
   - **Public Seam**: `src/modules/review/index.mjs` -> exports `assessMergeDanger()`, `generateVisualPrBody()`
   - **Encapsulation Depth**: 182 total lines (174 hidden inside 2 internal file(s); **Depth Ratio: 87**)
   - **Coupling Profile**: Fan-In `0` (dependents) | Fan-Out `0` (dependencies) | Instability `0`
   - **Governing ADRs**: `ADR-0000`, `ADR-0001`, `ADR-0003`, `ADR-0005`, `ADR-0007`
-- **`sensors` Module (`src/modules/sensors`)**:
-  - **Public Seam**: `src/modules/sensors/index.mjs` -> exports `runSensors()`, `checkRequiredSections()`, `checkClaimSources()`, `checkTraceability()`, `emitVerificationReceipt()`, `checkVerificationReceipt()`
-  - **Encapsulation Depth**: 249 total lines (235 hidden inside 1 internal file(s); **Depth Ratio: 39.17**)
-  - **Coupling Profile**: Fan-In `0` (dependents) | Fan-Out `1` (dependencies) | Instability `1`
-  - **Governing ADRs**: `ADR-0000`, `ADR-0001`, `ADR-0006`, `ADR-0007`
-- **`sizing` Module (`src/modules/sizing`)**:
-  - **Public Seam**: `src/modules/sizing/index.mjs` -> exports `classifyTaskSize()`
-  - **Encapsulation Depth**: 215 total lines (208 hidden inside 1 internal file(s); **Depth Ratio: 208**)
+- **`scaffolder` Module (`src/modules/scaffolder`)**:
+  - **Public Seam**: `src/modules/scaffolder/index.mjs` -> exports `syncGovernanceDocs()`, `scaffoldAdr()`, `scaffoldDeepModule()`, `writeApiRouter()`, `initFoundrySpec()`, `validateFoundrySpec()`, `compileFoundrySpec()`, `verifySpecParity()`, `scaffoldApiService()`
+  - **Encapsulation Depth**: 1150 total lines (1123 hidden inside 3 internal file(s); **Depth Ratio: 124.78**)
   - **Coupling Profile**: Fan-In `0` (dependents) | Fan-Out `0` (dependencies) | Instability `0`
-  - **Governing ADRs**: `ADR-0001`, `ADR-0002`, `ADR-0007`
+  - **Governing ADRs**: `ADR-0001`, `ADR-0003`, `ADR-0004`, `ADR-0009`
+- **`sensors` Module (`src/modules/sensors`)**:
+  - **Public Seam**: `src/modules/sensors/index.mjs` -> exports `runSensors()`, `checkRequiredSections()`, `checkClaimSources()`, `checkTraceability()`, `checkReadPathPurity()`, `checkLatexCitationBijection()`, `checkBenchmarkEmpiricalPurity()`, `checkFileSizeCeiling()`, `checkDynamicReportInterpolation()`, `checkRawRecordProvenance()`, `checkNoScriptedVerdicts()`, `checkUnboundedSubprocessPipe()`, `checkLatexTemplateHygiene()`, `emitVerificationReceipt()`, `checkVerificationReceipt()`
+  - **Encapsulation Depth**: 934 total lines (911 hidden inside 4 internal file(s); **Depth Ratio: 60.73**)
+  - **Coupling Profile**: Fan-In `0` (dependents) | Fan-Out `1` (dependencies) | Instability `1`
+  - **Governing ADRs**: `ADR-0000`, `ADR-0001`, `ADR-0006`, `ADR-0007`, `ADR-0010`
+- **`sizing` Module (`src/modules/sizing`)**:
+  - **Public Seam**: `src/modules/sizing/index.mjs` -> exports `classifyTaskSize()`, `resolveModelRouting()`
+  - **Encapsulation Depth**: 249 total lines (242 hidden inside 1 internal file(s); **Depth Ratio: 121**)
+  - **Coupling Profile**: Fan-In `1` (dependents) | Fan-Out `0` (dependencies) | Instability `0`
+  - **Governing ADRs**: `ADR-0001`, `ADR-0002`, `ADR-0007`, `ADR-0010`
 - **`visualizer` Module (`src/modules/visualizer`)**:
   - **Public Seam**: `src/modules/visualizer/index.mjs` -> exports `generateArchitectureVisuals()`, `generateArchitectureTour()`, `generateInteractiveExplorerHtml()`
   - **Encapsulation Depth**: 712 total lines (697 hidden inside 3 internal file(s); **Depth Ratio: 232.33**)
@@ -68,10 +73,10 @@ When a command or request enters `adr-governed-software-factory`, execution flow
 1. **Step 1 — `discovery` Seam (`src/modules/discovery/index.mjs`)**: Invokes `discoverPractices()`, delegating internal work across 4 encapsulated implementation file(s).
 2. **Step 2 — `governance` Seam (`src/modules/governance/index.mjs`)**: Invokes `verifyGovernance()`, delegating internal work across 3 encapsulated implementation file(s).
 3. **Step 3 — `gsd` Seam (`src/modules/gsd/index.mjs`)**: Invokes `resolveGsdPaths()`, delegating internal work across 1 encapsulated implementation file(s).
-4. **Step 4 — `learning` Seam (`src/modules/learning/index.mjs`)**: Invokes `checkRuleConflict()`, delegating internal work across 1 encapsulated implementation file(s).
+4. **Step 4 — `learning` Seam (`src/modules/learning/index.mjs`)**: Invokes `checkRuleConflict()`, delegating internal work across 2 encapsulated implementation file(s).
 5. **Step 5 — `review` Seam (`src/modules/review/index.mjs`)**: Invokes `assessMergeDanger()`, delegating internal work across 2 encapsulated implementation file(s).
 
-- **Cross-Module Edges Verified**: 2 directed module-to-module dependency link(s) (0 seam violation(s), 0 circular dependency cycle(s)).
+- **Cross-Module Edges Verified**: 3 directed module-to-module dependency link(s) (0 seam violation(s), 0 circular dependency cycle(s)).
 
 ---
 
@@ -84,13 +89,13 @@ When a command or request enters `adr-governed-software-factory`, execution flow
 - **`ADR-0004` (Expose Capabilities via CLI Transport Adapter)** — Status: `accepted` (100% adherence)
 - **`ADR-0005` (Enforce Public Seam Testing via node:test and Automated CI Gates)** — Status: `accepted` (100% adherence)
 
-### Key Historical Epochs from Git Archaeology (9 commits analyzed)
-- `2026-11-05` [`128172c`] (**module-seam-evolution**): feat(ARCH-9): Phase 6 Dogfooding Remediation & Enterprise Hardening
-- `2026-11-05` [`2434075`] (**governance-hardening**): fix(sensors): scope claim-sources sensor strictly to markdown documents
-- `2026-11-05` [`6888157`] (**architecture-adr**): feat(ARCH-8): synthesize Amazon AI-DLC capabilities into Software Factory (ADR-0007)
-- `2026-11-03` [`1af3061`] (**architecture-adr**): feat(ARCH-7): rebuild and wire Software Factory through native GSD Framework (ADR-0006)
-- `2026-11-03` [`457d4ab`] (**feature-slice**): feat: integrate Software Factory with existing GSD framework via config bridge and ADR gates
-- `2026-11-02` [`ae62260`] (**architecture-adr**): feat(ARCH-100): dogfood Wayfinder, Grill-With-Docs, ADRs 0001-0005, RFC-0001 & 4-Gate TDD Factory Engine
+### Key Historical Epochs from Git Archaeology (21 commits analyzed)
+- `2026-11-20` [`8283a91`] (**feature-slice**): docs(pr): update PR_DESCRIPTION.md with ENH-0017..0019 and 58/58 test receipt
+- `2026-11-20` [`651d915`] (**module-seam-evolution**): feat(overseer): implement ENH-0017..0019 (subprocess pipe, mtime fix, LaTeX template hygiene; 58 tests)
+- `2026-11-19` [`27cd8d5`] (**architecture-adr**): feat(overseer): implement ENH-0013..0016 provenance sensors, honest role routing, 56 tests, and PR_DESCRIPTION.md
+- `2026-11-19` [`4487858`] (**feature-slice**): feat(overseer): record ENH-0013 dynamic JSON interpolation nudge from Neon Gate-6 sign-off
+- `2026-11-19` [`656b1e9`] (**module-seam-evolution**): feat(overseer): record ENH-0011..0012 and add checkFileSizeCeiling 1,000-LOC sensor
+- `2026-11-19` [`fe4020d`] (**module-seam-evolution**): feat(overseer): record ENH-0010 and add checkBenchmarkEmpiricalPurity sensor
 
 ---
 
@@ -101,11 +106,11 @@ When a command or request enters `adr-governed-software-factory`, execution flow
 - Write public-seam tests in `tests/<domain>.seam.test.mjs` using `node:test` without importing private `/lib/` files.
 
 ### High-Gravity One-Way Door Zones (Require ADR/RFC & Rollback Plan)
+- **`CONTEXT.md`** (Module: `root`, Gravity Score: `8`, Fan-In: `0`)
+- **`docs/adr/README.md`** (Module: `root`, Gravity Score: `8`, Fan-In: `0`)
 - **`src/modules/governance/index.mjs`** (Module: `governance`, Gravity Score: `6`, Fan-In: `2`)
 - **`src/modules/governance/lib/adr-registry-parser.mjs`** (Module: `governance`, Gravity Score: `6`, Fan-In: `2`)
 - **`src/modules/governance/lib/drift-checker.mjs`** (Module: `governance`, Gravity Score: `6`, Fan-In: `2`)
-- **`src/modules/governance/lib/seam-checker.mjs`** (Module: `governance`, Gravity Score: `6`, Fan-In: `2`)
-- **`CONTEXT.md`** (Module: `root`, Gravity Score: `4`, Fan-In: `0`)
 
 ### Delete-Zone & Anti-Patterns to Never Copy
 - Never import private `/lib/` or `/internal/` files across module boundaries (`ADR-0001`).

@@ -20,7 +20,12 @@ import { verifyGovernance } from '../modules/governance/index.mjs';
 import { generateVisualPrBody } from '../modules/review/index.mjs';
 import { inspectGsdWorkspace } from '../modules/gsd/index.mjs';
 import { runSensors, emitVerificationReceipt, checkVerificationReceipt } from '../modules/sensors/index.mjs';
-import { recordLearnedRule, checkRuleConflict } from '../modules/learning/index.mjs';
+import {
+  recordLearnedRule,
+  checkRuleConflict,
+  recordOverseerNudge,
+  REQUIRED_RESEARCH_FACTORY_SKILLS,
+} from '../modules/learning/index.mjs';
 import {
   discoverPractices,
   analyzeCodebase,
@@ -32,6 +37,16 @@ import {
   generateArchitectureTour,
   generateInteractiveExplorerHtml,
 } from '../modules/visualizer/index.mjs';
+import {
+  syncGovernanceDocs,
+  scaffoldAdr,
+  scaffoldDeepModule,
+  scaffoldApiService,
+  initFoundrySpec,
+  validateFoundrySpec,
+  compileFoundrySpec,
+  verifySpecParity,
+} from '../modules/scaffolder/index.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
 
@@ -48,7 +63,7 @@ function getGitChangedFiles() {
     const baseRef = process.env.BASE_REF || 'origin/main';
     let diffOutput = '';
     try {
-      diffOutput = execSync(`git diff --name-only ${baseRef}...HEAD`, {
+      diffOutput = execSync(`git diff --name-only --diff-filter=d ${baseRef}...HEAD`, {
         cwd: repoRoot,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
@@ -63,7 +78,8 @@ function getGitChangedFiles() {
     });
     const statusFiles = statusOutput
       .split(/\r?\n/)
-      .map((line) => (line.length > 3 ? line.slice(3).trim() : ''))
+      .filter((line) => line.length > 3 && !line.slice(0, 2).includes('D'))
+      .map((line) => line.slice(3).trim())
       .filter(Boolean);
     const diffFiles = diffOutput
       .split(/\r?\n/)
@@ -116,6 +132,13 @@ function runSizeCommand(args) {
   console.log(`   • ADR/RFC Hard Stop Gate:   ${decision.hardStopForAdrOrRfc ? 'YES (Mint ADR/RFC first)' : 'NO'}`);
   console.log(`   • Required Gates:           ${decision.requiredGates.join(' -> ')}`);
   console.log(`   • Recommended Copilot Cmd:  ${decision.recommendedCommand}`);
+  if (decision.modelRouting) {
+    console.log(
+      `   • Role Routing:             planner: ${decision.modelRouting.planner} | builder: ${decision.modelRouting.builder} | reviewer: ${decision.modelRouting.reviewer} | overseer: ${decision.modelRouting.overseer}`
+    );
+    console.log(`   • Active Role Pipeline:     ${decision.modelRouting.activeRolePipeline}`);
+    console.log(`   • Model Selection Policy:   ${decision.modelRouting.modelSelection}`);
+  }
 }
 
 function runVerifyCommand(args) {
@@ -183,19 +206,32 @@ function runVerifyCommand(args) {
     }
   }
 
-  // Deterministic Artifact Sensors (ADR-0007)
+  // Deterministic Artifact Sensors (ADR-0007, ADR-0010)
   const sensorReport = runSensors({
     fileContents,
     contextMarkdown,
-    codeFiles: changedFiles
+    codeFiles: changedFiles,
+    cwd: repoRoot,
   });
 
   if (!sensorReport.passed) {
-    for (const v of sensorReport.findings.requiredSections) {
-      console.error(`❌ ${v.message}`);
-    }
-    for (const f of sensorReport.findings.claimSources) {
-      console.error(`❌ ${f.message}`);
+    const findingLists = [
+      sensorReport.findings.requiredSections,
+      sensorReport.findings.claimSources,
+      sensorReport.findings.readPathPurity,
+      sensorReport.findings.latexCitationBijection,
+      sensorReport.findings.benchmarkEmpiricalPurity,
+      sensorReport.findings.fileSizeCeiling,
+      sensorReport.findings.dynamicReportInterpolation,
+      sensorReport.findings.noScriptedVerdicts,
+      sensorReport.findings.unboundedSubprocessPipe,
+      sensorReport.findings.latexTemplateHygiene,
+      sensorReport.findings.rawRecordProvenance,
+    ];
+    for (const list of findingLists) {
+      for (const finding of list || []) {
+        console.error(`❌ ${finding.message}`);
+      }
     }
     process.exit(1);
   }
@@ -418,6 +454,164 @@ function runVisualizeCommand(args) {
   console.log(`   • Interactive HTML Explorer: ${path.relative(targetDir, written.explorerPath)}`);
 }
 
+function runSyncCommand(args) {
+  const targetDir = path.resolve(parseFlag(args, '--cwd') || parseFlag(args, '--path') || repoRoot);
+  const report = syncGovernanceDocs({ cwd: targetDir });
+
+  console.log(`🔄 [Governance Auto-Sync] Synchronized: ${report.cwd}`);
+  console.log(`   • Newly Registered Modules: ${report.addedModules.join(', ') || 'None (already in sync)'}`);
+  console.log(`   • Newly Registered ADRs:    ${report.addedAdrs.join(', ') || 'None (already in sync)'}`);
+}
+
+function runAddModuleCommand(args) {
+  const targetDir = path.resolve(parseFlag(args, '--cwd') || parseFlag(args, '--path') || repoRoot);
+  const exportsArg = parseFlag(args, '--exports');
+  const positional = args.filter(
+    (arg, i) => !arg.startsWith('--') && (i === 0 || !['--cwd', '--path', '--exports'].includes(args[i - 1]))
+  );
+  const moduleName = positional[0];
+
+  if (!moduleName) {
+    console.error('Usage: node src/cli/factory.mjs add-module <module-name> [--exports fn1,fn2] [--cwd <dir>]');
+    process.exit(1);
+  }
+
+  const exportsList = exportsArg
+    ? exportsArg.split(',').map((s) => s.trim()).filter(Boolean)
+    : undefined;
+
+  const result = scaffoldDeepModule({
+    cwd: targetDir,
+    moduleName,
+    exports: exportsList,
+  });
+
+  console.log(`⚡ [Deep Module Scaffolder] Created module '${result.moduleName}' in <50ms:`);
+  console.log(`   • Public Seam:       ${result.entryPoint} (exports: ${result.exports.join(', ')})`);
+  console.log(`   • Private Internals: ${result.internalFile}`);
+  console.log(`   • Seam Test:         ${result.testFile}`);
+  console.log(`   • Governance Sync:   ✅ Auto-registered in CONTEXT.md Section 2`);
+}
+
+function runAddAdrCommand(args) {
+  const targetDir = path.resolve(parseFlag(args, '--cwd') || parseFlag(args, '--path') || repoRoot);
+  const scope = parseFlag(args, '--scope') || '`src/modules/*`';
+  const decision = parseFlag(args, '--decision') || undefined;
+  const positional = args.filter(
+    (arg, i) => !arg.startsWith('--') && (i === 0 || !['--cwd', '--path', '--scope', '--decision'].includes(args[i - 1]))
+  );
+  const title = positional.join(' ');
+
+  if (!title) {
+    console.error('Usage: node src/cli/factory.mjs add-adr "<ADR Title>" [--scope "..."] [--decision "..."] [--cwd <dir>]');
+    process.exit(1);
+  }
+
+  const result = scaffoldAdr({
+    cwd: targetDir,
+    title,
+    scope,
+    decision,
+  });
+
+  console.log(`📜 [ADR Scaffolder] Minted sensor-compliant ${result.adrId}: ${result.title}`);
+  console.log(`   • File:            ${result.filePath}`);
+  console.log(`   • Governance Sync: ✅ Auto-registered in CONTEXT.md Section 3 & docs/adr/README.md`);
+}
+
+function runScaffoldApiCommand(args) {
+  const targetDir = path.resolve(
+    parseFlag(args, '--dir') ||
+      parseFlag(args, '--out') ||
+      parseFlag(args, '--cwd') ||
+      parseFlag(args, '--path') ||
+      process.cwd()
+  );
+  const name = parseFlag(args, '--name') || path.basename(targetDir);
+  const modulesArg = parseFlag(args, '--modules');
+  const port = Number(parseFlag(args, '--port') || 3000);
+
+  const modules = modulesArg
+    ? modulesArg.split(',').map((s) => s.trim()).filter(Boolean)
+    : ['users', 'items'];
+
+  const result = scaffoldApiService({
+    targetDir,
+    name,
+    modules,
+    port,
+  });
+
+  console.log(`🚀 [Turnkey API Scaffolder] Generated governed API service '${result.name}' at ${result.targetDir}:`);
+  console.log(`   • Foundry Executable Spec: ${result.specPath} + ${result.specBlueprintPath}`);
+  console.log(`   • HTTP Router & Server:    src/app.mjs, src/server.mjs (Port ${result.port})`);
+  console.log(`   • Deep Modules (${result.modules.length}):        ${result.modules.map((m) => `src/modules/${m}/index.mjs`).join(', ')}`);
+  console.log(`   • Automated Tests:         tests/api.integration.test.mjs + ${result.modules.length} seam test(s)`);
+  console.log(`   • Governance & ADRs:       CONTEXT.md, GLOSSARY.md, docs/adr/0001-*.md (100% synced)`);
+}
+
+function runSpecCommand(args) {
+  const action = args.find((a) => !a.startsWith('--')) || 'validate';
+  const targetDir = path.resolve(
+    parseFlag(args, '--dir') ||
+      parseFlag(args, '--out') ||
+      parseFlag(args, '--cwd') ||
+      parseFlag(args, '--path') ||
+      process.cwd()
+  );
+  const specRelPath = parseFlag(args, '--spec') || 'specs/service.spec.json';
+  const specAbsPath = path.resolve(targetDir, specRelPath);
+
+  if (action === 'init') {
+    const name = parseFlag(args, '--name') || path.basename(targetDir);
+    const modulesArg = parseFlag(args, '--modules');
+    const port = Number(parseFlag(args, '--port') || 3000);
+    const modules = modulesArg
+      ? modulesArg.split(',').map((s) => s.trim()).filter(Boolean)
+      : ['orders', 'payments'];
+
+    const res = initFoundrySpec({ cwd: targetDir, serviceName: name, port, modules });
+    console.log(`📐 [Foundry SDD Engine] Initialized Executable Spec for '${res.spec.serviceName}':`);
+    console.log(`   • Machine Spec:   ${res.specJsonPath} (${res.spec.modules.length} bounded contexts)`);
+    console.log(`   • Blueprint Doc:  ${res.specMdPath}`);
+    return;
+  }
+
+  if (action === 'validate') {
+    const res = validateFoundrySpec(specAbsPath);
+    if (!res.valid) {
+      console.error(`❌ [Foundry Spec Validation Failed] ${res.errors.join('; ')}`);
+      process.exit(1);
+    }
+    console.log(
+      `✅ [Foundry Spec Validated] ${res.summary.serviceName}: ${res.summary.moduleCount} module(s), ${res.summary.fieldCount} field(s), ${res.summary.endpointCount} endpoint(s), ${res.summary.scenarioCount} scenario(s)`
+    );
+    return;
+  }
+
+  if (action === 'compile') {
+    const res = compileFoundrySpec({ cwd: targetDir, specPath: specRelPath });
+    console.log(`⚙️  [Foundry Spec Compiler] Compiled '${res.name}' from ${res.specPath}:`);
+    console.log(`   • Modules Compiled: ${res.modules.join(', ')}`);
+    console.log(`   • HTTP Router:      src/app.mjs (with 1MB payload guard & 422 boundary validation)`);
+    console.log(`   • Governance Sync:  ✅ CONTEXT.md & docs/adr/README.md synchronized`);
+    return;
+  }
+
+  if (action === 'verify') {
+    const res = verifySpecParity({ cwd: targetDir, specPath: specRelPath });
+    if (!res.aligned) {
+      console.error(`❌ [Foundry Spec Parity Drift] ${res.drift.join('; ')}`);
+      process.exit(1);
+    }
+    console.log(`✅ [Foundry Spec Parity Verified] 100% alignment across ${res.checkedModules.join(', ')}`);
+    return;
+  }
+
+  console.error('Usage: node src/cli/factory.mjs spec <init|validate|compile|verify> [--cwd <dir>] [--spec <path>]');
+  process.exit(1);
+}
+
 function runGsdCommand(args) {
   const action = args.find((a) => !a.startsWith('--')) || 'status';
   const asJson = args.includes('--json');
@@ -456,6 +650,47 @@ function runGsdCommand(args) {
   }
 }
 
+function runNudgeCommand(args) {
+  const asJson = args.includes('--json');
+  const targetDir = path.resolve(parseFlag(args, '--cwd') || repoRoot);
+  const source = parseFlag(args, '--source') || '@factory-overseer';
+  const status = parseFlag(args, '--status') || 'completed';
+  const backlogFile = parseFlag(args, '--file') || 'ENHANCEMENT_BACKLOG.md';
+
+  const positional = args.filter(
+    (arg, i) =>
+      !arg.startsWith('--') &&
+      (i === 0 || !['--cwd', '--source', '--status', '--file'].includes(args[i - 1]))
+  );
+  const note = positional.join(' ').trim();
+  const result = recordOverseerNudge({ cwd: targetDir, note, source, status, backlogFile });
+
+  if (asJson) {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  console.log('🛰️  [Factory Overseer Audit & Nudge Loop] Governed by ADR-0010');
+  console.log(
+    `   • Role Routing:             planner: ${result.modelRouting.planner} | builder: ${result.modelRouting.builder} | reviewer: ${result.modelRouting.reviewer} | overseer: ${result.modelRouting.overseer}`
+  );
+  console.log(`   • Model Selection Policy:   ${result.modelRouting.modelSelection}`);
+  console.log(
+    `   • Research Skills Bundle:   ${result.installedSkills.length}/${REQUIRED_RESEARCH_FACTORY_SKILLS.length} installed (${result.missingSkills.length === 0 ? '✅ 100% READY' : `❌ Missing: ${result.missingSkills.join(', ')}`})`
+  );
+  console.log(
+    `   • ADR-0010 Governance:      ${result.adr0010Present ? '✅ Registered in CONTEXT.md & docs/adr/' : '❌ Missing ADR-0010'}`
+  );
+  console.log(
+    `   • Enhancement Backlog:      ${result.enhancementCount} tracked enhancement(s) in ${path.relative(targetDir, result.backlogPath)}`
+  );
+  if (result.recordedEntry) {
+    console.log(
+      `   • Recorded Overseer Nudge:  ✅ ${result.recordedEntry.enhId} (${result.recordedEntry.contentHash}) — "${result.recordedEntry.note}"`
+    );
+  }
+}
+
 const [, , subcommand, ...restArgs] = process.argv;
 
 switch (subcommand) {
@@ -486,9 +721,28 @@ switch (subcommand) {
   case 'visualize':
     runVisualizeCommand(restArgs);
     break;
+  case 'sync':
+    runSyncCommand(restArgs);
+    break;
+  case 'add-module':
+    runAddModuleCommand(restArgs);
+    break;
+  case 'add-adr':
+    runAddAdrCommand(restArgs);
+    break;
+  case 'scaffold-api':
+    runScaffoldApiCommand(restArgs);
+    break;
+  case 'spec':
+    runSpecCommand(restArgs);
+    break;
+  case 'nudge':
+  case 'overseer-audit':
+    runNudgeCommand(restArgs);
+    break;
   default:
     console.log(
-      'Usage: node src/cli/factory.mjs <size|verify|learn|discover|analyze|adr-synthesize|visualize|pr-report|gsd> [options]'
+      'Usage: node src/cli/factory.mjs <size|verify|sync|add-module|add-adr|scaffold-api|spec|learn|discover|analyze|adr-synthesize|visualize|pr-report|gsd|nudge|overseer-audit> [options]'
     );
     process.exit(subcommand ? 1 : 0);
 }

@@ -56,13 +56,16 @@ function findStructuralFiles(changedFiles) {
 }
 
 /**
- * Infers task Intent Profile, depth, and test strategy from prompt and size (ADR-0007).
+ * Infers task Intent Profile, depth, and test strategy from prompt and size (ADR-0007, ADR-0010).
  * @param {string} prompt
  * @param {'S' | 'M' | 'L'} size
  */
 function inferIntentProfile(prompt, size) {
   if (/\b(cve-\d+|security|vulnerability|auth\s+bypass|sanitize|injection)\b/i.test(prompt)) {
     return { profile: 'security-patch', depth: 'minimal', testStrategy: 'minimal' };
+  }
+  if (/\b(arxiv|theorem|lemma|hypothesis|ablation|scholarpeer|paperviz|autoresearch|manuscript|latex)\b/i.test(prompt)) {
+    return { profile: 'research', depth: 'comprehensive', testStrategy: 'comprehensive' };
   }
   if (/\b(terraform|k8s|kubernetes|cloudwatch|ecs|ec2|docker|infra|infrastructure|iac|pipeline|deploy)\b/i.test(prompt)) {
     return { profile: 'infra', depth: 'standard', testStrategy: 'standard' };
@@ -86,6 +89,33 @@ function inferIntentProfile(prompt, size) {
 }
 
 /**
+ * Resolves the role routing and invocation-time model selection metadata (ADR-0010, ENH-0016).
+ * Note: The Software Factory CLI does not select or switch underlying LLM weights itself;
+ * actual model selection occurs at subagent invocation time in the host harness (e.g., 'inherit', 'pro', 'flash').
+ *
+ * @param {'S' | 'M' | 'L'} [size='M']
+ * @param {string} [profile='feature']
+ */
+export function resolveModelRouting(size = 'M', profile = 'feature') {
+  const activeRolePipeline =
+    size === 'L' || profile === 'research'
+      ? 'planner (@architect) -> builder (@engineer) -> reviewer (@pr-reviewer)'
+      : size === 'M'
+        ? 'builder (@engineer) -> reviewer (@pr-reviewer)'
+        : 'builder (@engineer)';
+
+  return Object.freeze({
+    planner: 'Architecture, Literature Recon & Protocol Pre-Registration (@architect)',
+    builder: 'Deep Module Implementation, Seam TDD & Raw-Logged Benchmarks (@engineer)',
+    reviewer: 'Provenance-First Independent Audit & Two-Axis Review (@pr-reviewer)',
+    overseer: 'Continuous Factory Sensor & Governance Maintenance (@factory-overseer)',
+    modelSelection:
+      "Chosen by host agent harness at invocation time (e.g., 'inherit', 'pro', 'flash'); not selected by factory CLI",
+    activeRolePipeline,
+  });
+}
+
+/**
  * Builds the immutable SizingDecision output for a chosen size.
  * @param {'S' | 'M' | 'L'} size
  * @param {'user-override' | 'auto-detected' | 'safety-escalated'} mode
@@ -95,6 +125,7 @@ function inferIntentProfile(prompt, size) {
  */
 function buildSizingDecision(size, mode, escalated, escalationReason, prompt = '') {
   const intent = inferIntentProfile(prompt, size);
+  const modelRouting = resolveModelRouting(size, intent.profile);
 
   if (size === 'S') {
     return Object.freeze({
@@ -103,6 +134,7 @@ function buildSizingDecision(size, mode, escalated, escalationReason, prompt = '
       profile: intent.profile,
       depth: intent.depth,
       testStrategy: intent.testStrategy,
+      modelRouting,
       mode,
       escalated,
       escalationReason,
@@ -122,6 +154,7 @@ function buildSizingDecision(size, mode, escalated, escalationReason, prompt = '
       profile: intent.profile,
       depth: intent.depth,
       testStrategy: intent.testStrategy,
+      modelRouting,
       mode,
       escalated,
       escalationReason,
@@ -140,6 +173,7 @@ function buildSizingDecision(size, mode, escalated, escalationReason, prompt = '
     profile: intent.profile,
     depth: intent.depth,
     testStrategy: intent.testStrategy,
+    modelRouting,
     mode,
     escalated,
     escalationReason,

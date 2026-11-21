@@ -126,3 +126,111 @@ test('CLI Integration [ADR-0008]: factory analyze --visualize generates X-Ray, R
     fs.rmSync(tmpOutDir, { recursive: true, force: true });
   }
 });
+
+test('CLI Integration [ADR-0009]: factory scaffold-api, add-module, add-adr, and sync commands execute in < 1 second', () => {
+  const tmpApiDir = fs.mkdtempSync(path.join(os.tmpdir(), 'factory-cli-api-'));
+  try {
+    const scaffoldOut = execFileSync(
+      process.execPath,
+      [
+        cliPath,
+        'scaffold-api',
+        '--dir',
+        tmpApiDir,
+        '--name',
+        'inventory-api',
+        '--modules',
+        'items,warehouses',
+        '--port',
+        '4200'
+      ],
+      { encoding: 'utf8' }
+    );
+    assert.match(scaffoldOut, /\[Turnkey API Scaffolder\]/);
+    assert.ok(fs.existsSync(path.join(tmpApiDir, 'src', 'app.mjs')));
+
+    const addModuleOut = execFileSync(
+      process.execPath,
+      [cliPath, 'add-module', 'shipments', '--cwd', tmpApiDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(addModuleOut, /\[Deep Module Scaffolder\]/);
+    assert.ok(fs.existsSync(path.join(tmpApiDir, 'src', 'modules', 'shipments', 'index.mjs')));
+
+    const addAdrOut = execFileSync(
+      process.execPath,
+      [cliPath, 'add-adr', 'Shipment Event Bus', '--scope', '`src/modules/shipments`', '--cwd', tmpApiDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(addAdrOut, /\[ADR Scaffolder\]/);
+    assert.ok(fs.existsSync(path.join(tmpApiDir, 'docs', 'adr', '0002-shipment-event-bus.md')));
+
+    const syncOut = execFileSync(
+      process.execPath,
+      [cliPath, 'sync', '--cwd', tmpApiDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(syncOut, /\[Governance Auto-Sync\]/);
+
+    const specValOut = execFileSync(
+      process.execPath,
+      [cliPath, 'spec', 'validate', '--cwd', tmpApiDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(specValOut, /\[Foundry Spec Validated\]/);
+
+    const specVerifyOut = execFileSync(
+      process.execPath,
+      [cliPath, 'spec', 'verify', '--cwd', tmpApiDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(specVerifyOut, /\[Foundry Spec Parity Verified\]/);
+  } finally {
+    fs.rmSync(tmpApiDir, { recursive: true, force: true });
+  }
+});
+
+test('CLI Integration [ADR-0010, ENH-0016]: factory overseer-audit and factory nudge verify 11 research skills, honest role routing, and record backlog nudges', () => {
+  const auditJson = execFileSync(
+    process.execPath,
+    [cliPath, 'overseer-audit', '--json'],
+    { encoding: 'utf8' }
+  );
+  const auditReport = JSON.parse(auditJson);
+  assert.equal(auditReport.passed, true);
+  assert.equal(auditReport.adr0010Present, true);
+  assert.equal(auditReport.missingSkills.length, 0);
+  assert.equal(auditReport.installedSkills.length, 11);
+  assert.match(auditReport.modelRouting.planner, /@architect/);
+  assert.match(auditReport.modelRouting.builder, /@engineer/);
+  assert.match(auditReport.modelRouting.reviewer, /@pr-reviewer/);
+  assert.match(auditReport.modelRouting.overseer, /@factory-overseer/);
+  assert.match(auditReport.modelRouting.modelSelection, /invocation time/i);
+
+  const tmpBacklog = path.join(os.tmpdir(), `sf-overseer-backlog-${Date.now()}.md`);
+  try {
+    const nudgeJson = execFileSync(
+      process.execPath,
+      [
+        cliPath,
+        'nudge',
+        'Verify 1:1 ADR-to-Theorem parity before running PaperVizAgent',
+        '--source',
+        'Prism-ANN-Audit',
+        '--file',
+        tmpBacklog,
+        '--json',
+      ],
+      { encoding: 'utf8' }
+    );
+    const nudgeReport = JSON.parse(nudgeJson);
+    assert.equal(nudgeReport.passed, true);
+    assert.equal(nudgeReport.recordedEntry.enhId, 'ENH-0001');
+    assert.match(nudgeReport.recordedEntry.contentHash, /^cid:[a-f0-9]{16}$/);
+    assert.match(fs.readFileSync(tmpBacklog, 'utf8'), /Verify 1:1 ADR-to-Theorem parity/);
+  } finally {
+    try {
+      fs.unlinkSync(tmpBacklog);
+    } catch {}
+  }
+});
