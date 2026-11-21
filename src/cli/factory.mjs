@@ -14,14 +14,18 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { execSync } from 'node:child_process';
-import { classifyTaskSize, resolveModelRouting } from '../modules/sizing/index.mjs';
+import { classifyTaskSize } from '../modules/sizing/index.mjs';
 import { verifyGovernance } from '../modules/governance/index.mjs';
 import { generateVisualPrBody } from '../modules/review/index.mjs';
 import { inspectGsdWorkspace } from '../modules/gsd/index.mjs';
 import { runSensors, emitVerificationReceipt, checkVerificationReceipt } from '../modules/sensors/index.mjs';
-import { recordLearnedRule, checkRuleConflict } from '../modules/learning/index.mjs';
+import {
+  recordLearnedRule,
+  checkRuleConflict,
+  recordOverseerNudge,
+  REQUIRED_RESEARCH_FACTORY_SKILLS,
+} from '../modules/learning/index.mjs';
 import {
   discoverPractices,
   analyzeCodebase,
@@ -211,29 +215,23 @@ function runVerifyCommand(args) {
   });
 
   if (!sensorReport.passed) {
-    for (const v of sensorReport.findings.requiredSections) {
-      console.error(`❌ ${v.message}`);
-    }
-    for (const f of sensorReport.findings.claimSources) {
-      console.error(`❌ ${f.message}`);
-    }
-    for (const p of sensorReport.findings.readPathPurity || []) {
-      console.error(`❌ ${p.message}`);
-    }
-    for (const b of sensorReport.findings.benchmarkEmpiricalPurity || []) {
-      console.error(`❌ ${b.message}`);
-    }
-    for (const c of sensorReport.findings.fileSizeCeiling || []) {
-      console.error(`❌ ${c.message}`);
-    }
-    for (const d of sensorReport.findings.dynamicReportInterpolation || []) {
-      console.error(`❌ ${d.message}`);
-    }
-    for (const s of sensorReport.findings.noScriptedVerdicts || []) {
-      console.error(`❌ ${s.message}`);
-    }
-    for (const r of sensorReport.findings.rawRecordProvenance || []) {
-      console.error(`❌ ${r.message}`);
+    const findingLists = [
+      sensorReport.findings.requiredSections,
+      sensorReport.findings.claimSources,
+      sensorReport.findings.readPathPurity,
+      sensorReport.findings.latexCitationBijection,
+      sensorReport.findings.benchmarkEmpiricalPurity,
+      sensorReport.findings.fileSizeCeiling,
+      sensorReport.findings.dynamicReportInterpolation,
+      sensorReport.findings.noScriptedVerdicts,
+      sensorReport.findings.unboundedSubprocessPipe,
+      sensorReport.findings.latexTemplateHygiene,
+      sensorReport.findings.rawRecordProvenance,
+    ];
+    for (const list of findingLists) {
+      for (const finding of list || []) {
+        console.error(`❌ ${finding.message}`);
+      }
     }
     process.exit(1);
   }
@@ -652,68 +650,12 @@ function runGsdCommand(args) {
   }
 }
 
-const REQUIRED_RESEARCH_FACTORY_SKILLS = [
-  'adr-to-arxiv-factory',
-  '0-autoresearch-skill',
-  'systems-paper-writing',
-  'ml-paper-writing',
-  'academic-plotting',
-  'brainstorming-research-ideas',
-  'creative-thinking-for-research',
-  'blast-radius',
-  'thermo-nuclear-code-quality-review',
-  'presenting-conference-talks',
-  'paper2agent',
-];
-
-function buildOverseerAuditReport(targetDir, backlogPath) {
-  const skillsDir = path.join(targetDir, '.agents', 'skills');
-  const installedSkills = [];
-  const missingSkills = [];
-
-  for (const skill of REQUIRED_RESEARCH_FACTORY_SKILLS) {
-    const skillMdPath = path.join(skillsDir, skill, 'SKILL.md');
-    if (fs.existsSync(skillMdPath)) {
-      installedSkills.push(skill);
-    } else {
-      missingSkills.push(skill);
-    }
-  }
-
-  const adr0010Path = path.join(
-    targetDir,
-    'docs',
-    'adr',
-    '0010-multi-model-autoresearch-and-overseer-governance.md'
-  );
-  const contextPath = path.join(targetDir, 'CONTEXT.md');
-  const contextText = fs.existsSync(contextPath) ? fs.readFileSync(contextPath, 'utf8') : '';
-  const adr0010Present = fs.existsSync(adr0010Path) && contextText.includes('ADR-0010');
-  const backlogPresent = fs.existsSync(backlogPath);
-  const backlogText = backlogPresent ? fs.readFileSync(backlogPath, 'utf8') : '';
-  const enhancementMatches = backlogText.match(/\*\*ENH-\d{4}\*\*/g) || [];
-  const modelRouting = resolveModelRouting('L', 'research');
-
-  return {
-    passed: missingSkills.length === 0 && adr0010Present && backlogPresent,
-    adr0010Present,
-    backlogPresent,
-    enhancementCount: enhancementMatches.length,
-    installedSkills,
-    missingSkills,
-    modelRouting,
-  };
-}
-
 function runNudgeCommand(args) {
   const asJson = args.includes('--json');
   const targetDir = path.resolve(parseFlag(args, '--cwd') || repoRoot);
   const source = parseFlag(args, '--source') || '@factory-overseer';
   const status = parseFlag(args, '--status') || 'completed';
-  const backlogPath = path.resolve(
-    targetDir,
-    parseFlag(args, '--file') || 'ENHANCEMENT_BACKLOG.md'
-  );
+  const backlogFile = parseFlag(args, '--file') || 'ENHANCEMENT_BACKLOG.md';
 
   const positional = args.filter(
     (arg, i) =>
@@ -721,36 +663,7 @@ function runNudgeCommand(args) {
       (i === 0 || !['--cwd', '--source', '--status', '--file'].includes(args[i - 1]))
   );
   const note = positional.join(' ').trim();
-
-  let recordedEntry = null;
-  if (note) {
-    if (!fs.existsSync(backlogPath)) {
-      fs.writeFileSync(
-        backlogPath,
-        '# Software Factory Overseer Enhancement Backlog (`ENHANCEMENT_BACKLOG.md`)\n\n| ID | Timestamp | Source / Observation | Enhancement Directive | Governing ADR | Status | Provenance Hash |\n|---|---|---|---|---|---|---|\n',
-        'utf8'
-      );
-    }
-    const currentText = fs.readFileSync(backlogPath, 'utf8');
-    const existingIds = Array.from(currentText.matchAll(/\*\*ENH-(\d{4})\*\*/g)).map((m) =>
-      Number(m[1])
-    );
-    const nextNum = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
-    const enhId = `ENH-${String(nextNum).padStart(4, '0')}`;
-    const timestamp = new Date().toISOString();
-    const contentHash = crypto
-      .createHash('sha256')
-      .update(`${enhId}:${timestamp}:${source}:${note}`)
-      .digest('hex')
-      .slice(0, 16);
-
-    const newRow = `| **${enhId}** | \`${timestamp}\` | \`${source}\` | ${note} | \`ADR-0010\` | \`${status}\` | \`cid:${contentHash}\` |`;
-    fs.writeFileSync(backlogPath, `${currentText.trimEnd()}\n${newRow}\n`, 'utf8');
-    recordedEntry = { enhId, timestamp, source, note, status, contentHash: `cid:${contentHash}` };
-  }
-
-  const audit = buildOverseerAuditReport(targetDir, backlogPath);
-  const result = { ...audit, recordedEntry };
+  const result = recordOverseerNudge({ cwd: targetDir, note, source, status, backlogFile });
 
   if (asJson) {
     console.log(JSON.stringify(result, null, 2));
@@ -759,21 +672,21 @@ function runNudgeCommand(args) {
 
   console.log('🛰️  [Factory Overseer Audit & Nudge Loop] Governed by ADR-0010');
   console.log(
-    `   • Role Routing:             planner: ${audit.modelRouting.planner} | builder: ${audit.modelRouting.builder} | reviewer: ${audit.modelRouting.reviewer} | overseer: ${audit.modelRouting.overseer}`
+    `   • Role Routing:             planner: ${result.modelRouting.planner} | builder: ${result.modelRouting.builder} | reviewer: ${result.modelRouting.reviewer} | overseer: ${result.modelRouting.overseer}`
   );
-  console.log(`   • Model Selection Policy:   ${audit.modelRouting.modelSelection}`);
+  console.log(`   • Model Selection Policy:   ${result.modelRouting.modelSelection}`);
   console.log(
-    `   • Research Skills Bundle:   ${audit.installedSkills.length}/${REQUIRED_RESEARCH_FACTORY_SKILLS.length} installed (${audit.missingSkills.length === 0 ? '✅ 100% READY' : `❌ Missing: ${audit.missingSkills.join(', ')}`})`
-  );
-  console.log(
-    `   • ADR-0010 Governance:      ${audit.adr0010Present ? '✅ Registered in CONTEXT.md & docs/adr/' : '❌ Missing ADR-0010'}`
+    `   • Research Skills Bundle:   ${result.installedSkills.length}/${REQUIRED_RESEARCH_FACTORY_SKILLS.length} installed (${result.missingSkills.length === 0 ? '✅ 100% READY' : `❌ Missing: ${result.missingSkills.join(', ')}`})`
   );
   console.log(
-    `   • Enhancement Backlog:      ${audit.enhancementCount} tracked enhancement(s) in ${path.relative(targetDir, backlogPath)}`
+    `   • ADR-0010 Governance:      ${result.adr0010Present ? '✅ Registered in CONTEXT.md & docs/adr/' : '❌ Missing ADR-0010'}`
   );
-  if (recordedEntry) {
+  console.log(
+    `   • Enhancement Backlog:      ${result.enhancementCount} tracked enhancement(s) in ${path.relative(targetDir, result.backlogPath)}`
+  );
+  if (result.recordedEntry) {
     console.log(
-      `   • Recorded Overseer Nudge:  ✅ ${recordedEntry.enhId} (${recordedEntry.contentHash}) — "${recordedEntry.note}"`
+      `   • Recorded Overseer Nudge:  ✅ ${result.recordedEntry.enhId} (${result.recordedEntry.contentHash}) — "${result.recordedEntry.note}"`
     );
   }
 }

@@ -10,6 +10,7 @@ Eliminate architectural drift and pull-request review bottlenecks by enforcing *
 
 ## Architecture & Governance Reference
 
+- **Product Requirements Document (PRD)**: [`docs/PRD.md`](../docs/PRD.md)
 - **Master Context & ADR Registry**: [`CONTEXT.md`](../CONTEXT.md)
 - **Ubiquitous Domain Language**: [`GLOSSARY.md`](../GLOSSARY.md)
 - **Separate-Context Review Standards**: [`CODING_STANDARDS.md`](../CODING_STANDARDS.md)
@@ -26,3 +27,7 @@ Eliminate architectural drift and pull-request review bottlenecks by enforcing *
 | `ADR-0004` | Deterministic Zero-Dependency Node ESM Governance CLI (`src/cli/factory.mjs`) | `accepted` |
 | `ADR-0005` | Two-Axis Separate-Context PR Review & Merge Danger (`One-Way` vs `Two-Way Door`) Scoring | `accepted` |
 | `ADR-0006` | Native GSD Framework Bridge (`src/modules/gsd/index.mjs`) & `.planning/` ADR Traceability | `accepted` |
+| `ADR-0007` | AI-DLC Synthesis Architecture (Intent Profiles, Sensors, Self-Learning Loop & Receipts) | `accepted` |
+| `ADR-0008` | Brownfield Archaeology, Evidence-Backed Retro-ADR Synthesis & 5-Lens Visual Intelligence | `accepted` |
+| `ADR-0009` | Foundry Spec-Driven Development (SDD), High-Velocity API Scaffolder & Two-Way Auto-Sync | `accepted` |
+| `ADR-0010` | Role-Separated Research Governance, 9 Provenance Sensors & Overseer Nudge Loop | `accepted` |

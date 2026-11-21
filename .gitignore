@@ -8,3 +8,12 @@
 
 # Generated verification receipt (tool-owned checkpoint)
 .planning/VERIFICATION_RECEIPT.json
+
+# Optional local Marketplace plugin skill symlinks (created via scripts/sync-plugin-skills.sh)
+.agents/skills/coderabbit-autofix
+.agents/skills/coderabbit-review
+.agents/skills/embl-ebi-ols
+.agents/skills/literature-search-arxiv
+.agents/skills/literature-search-openalex
+.agents/skills/tavily-research
+.agents/skills/tavily-search

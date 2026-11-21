@@ -23,7 +23,8 @@ import {
 import {
   recordLearnedRule,
   checkRuleConflict,
-  listLearnedRules
+  listLearnedRules,
+  buildOverseerAuditReport,
 } from '../src/modules/learning/index.mjs';
 import { discoverPractices } from '../src/modules/discovery/index.mjs';
 import { assessMergeDanger } from '../src/modules/review/index.mjs';
@@ -410,4 +411,52 @@ test('Sensors [ADR-0010, ENH-0019]: checkLatexTemplateHygiene flags leftover (X)
 
   const ok = checkLatexTemplateHygiene({ 'paper/prism_ann.tex': cleanTex });
   assert.equal(ok.length, 0);
+
+  // Vendored .agents/ templates must be excluded from template hygiene checks
+  const vendored = checkLatexTemplateHygiene({ '.agents/skills/ml-paper-writing/templates/sample.tex': dirtyTex });
+  assert.equal(vendored.length, 0);
+});
+
+test('Sensors [ADR-0010]: runSensors wires checkLatexCitationBijection on project .tex/.bib files while excluding .agents/', () => {
+  const failing = runSensors({
+    fileContents: {
+      'paper/main.tex': 'We cite \\cite{missing2026}.',
+      'paper/refs.bib': '@article{unused2020, title={Unused}}',
+    },
+  });
+  assert.equal(failing.passed, false);
+  assert.equal(failing.findings.latexCitationBijection.length, 1);
+  assert.equal(failing.findings.latexCitationBijection[0].rule, 'latex-citation-bijection');
+
+  const vendoredIgnored = runSensors({
+    fileContents: {
+      '.agents/skills/ml-paper-writing/templates/main.tex': 'Template \\cite{placeholder_key}.',
+    },
+  });
+  assert.equal(vendoredIgnored.passed, true);
+  assert.equal(vendoredIgnored.findings.latexCitationBijection.length, 0);
+});
+
+test('Learning Seam [ADR-0010]: buildOverseerAuditReport operates cleanly through src/modules/learning/index.mjs', () => {
+  const report = buildOverseerAuditReport({ cwd: process.cwd() });
+  assert.equal(report.passed, true);
+  assert.equal(report.adr0010Present, true);
+  assert.equal(report.installedSkills.length, 11);
+});
+
+test('Maintainability [ADR-0001, ADR-0010]: all core src/ files stay under CODING_STANDARDS.md 800-LOC ceiling', () => {
+  const srcRoot = path.resolve(process.cwd(), 'src');
+  const fileContents = {};
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.isFile() && entry.name.endsWith('.mjs')) {
+        fileContents[path.relative(process.cwd(), full)] = fs.readFileSync(full, 'utf8');
+      }
+    }
+  };
+  walk(srcRoot);
+  const violations = checkFileSizeCeiling(fileContents, 800);
+  assert.deepEqual(violations, []);
 });

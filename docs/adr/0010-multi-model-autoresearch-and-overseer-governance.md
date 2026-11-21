@@ -37,19 +37,21 @@ Every task classified by `classifyTaskSize` (`Small [S]`, `Medium [M]`, `Large [
 
 ### 2.2 Deterministic Research Integrity & Provenance Sensors (`src/modules/sensors/`)
 
-In addition to `checkRequiredSections`, `checkClaimSources`, and `checkTraceability`, `src/modules/sensors/index.mjs` exports seven deterministic research-engineering sensors:
+In addition to `checkRequiredSections`, `checkClaimSources`, and `checkTraceability`, `src/modules/sensors/index.mjs` exports **nine** deterministic research-engineering sensors (all wired into `runSensors()` and `factory verify` stderr diagnostics, decomposed across `doc-sensors.mjs`, `provenance-sensors.mjs`, and `research-sensors.mjs` to stay well under `CODING_STANDARDS.md`'s 800-LOC ceiling):
 
-1. `checkLatexCitationBijection` (`ENH-0007`): Enforces 1:1 bijection between `\cite{...}` keys in LaTeX manuscripts and `\bibitem{...}` / BibTeX entries.
+1. `checkLatexCitationBijection` (`ENH-0007`): Enforces 1:1 bijection between `\cite{...}` keys in project LaTeX manuscripts and `\bibitem{...}` / BibTeX entries (automatically executed in `runSensors()` on project `.tex`/`.bib` files).
 2. `checkReadPathPurity` (`ENH-0008`): Flags global RNG seed mutations (`random.seed`, `np.random.seed`) and synthetic metric counter offsets (`distance_computations += int(...)`) inside `src/modules/`.
 3. `checkBenchmarkEmpiricalPurity` (`ENH-0010`, `ENH-0014`): Scans benchmark runners (`*benchmark*.{py,mjs,js,ts}`) for (a) hardcoded multi-element float arrays assigned to metric keys (`recall_at_10`, `p99_latency_ms`, `curves =`) and (b) conservative heuristic detection of formula-derived metrics computed from loop variables or in benchmark functions lacking any timing (`perf_counter`, `time.time`, `performance.now`) or search/index invocation.
-4. `checkFileSizeCeiling` (`ENH-0012`): Enforces the 1,000-line ceiling across source and benchmark files.
+4. `checkFileSizeCeiling` (`ENH-0012`): Enforces the 1,000-line ceiling across source and benchmark files (while core `src/` files target `< 800` lines per `CODING_STANDARDS.md` §2.2).
 5. `checkDynamicReportInterpolation` (`ENH-0013`): Flags hardcoded empirical metric literals (`98.4%`, `14.2 ms`, `623x`, `97.72/100`) embedded directly inside report/audit template strings without runtime variable interpolation.
-6. `checkRawRecordProvenance` (`ENH-0014`): When a repository contains a results summary JSON (`results/**/summary*.json` or `results/**/*_results.json`), requires (a) a sibling `raw/` directory containing non-empty `*.jsonl` per-query records, (b) a recompute script (`bench/recompute.py`, `scripts/recompute.py`, or `recompute.*`), and (c) that the summary JSON's modification timestamp (`mtime`) is not newer than every raw `.jsonl` record (or governed by the recompute check).
+6. `checkRawRecordProvenance` (`ENH-0014`, `ENH-0018`): When a repository contains a results summary JSON (`results/**/summary*.json` or `results/**/*_results.json`), requires (a) a sibling `raw/` (or paired `raw_<suffix>/`) directory containing non-empty `*.jsonl` per-query records, (b) a recompute script (`bench/recompute.py`, `scripts/recompute.py`, or `recompute.*`), and (c) valid `mtime` ordering (`summary.mtimeMs >= maxRawMtimeMs`, fixed in `ENH-0018`) so stale summaries older than raw `.jsonl` logs fail verification.
 7. `checkNoScriptedVerdicts` (`ENH-0015`): Fails if any `*audit*`, `*review*`, `*scholarpeer*`, or `*paperviz*` script contains literal score dictionary constants (e.g., `"faithfulness": 99.0`) or hardcoded verdict strings (`"STRONG ACCEPT"`, `"Score: 9.0 / 10"`).
+8. `checkUnboundedSubprocessPipe` (`ENH-0017`): Flags long-lived Python `subprocess.Popen(..., stdout/stderr=subprocess.PIPE)` calls without `.communicate()` to prevent 64 KB OS pipe-buffer deadlocks on daemons.
+9. `checkLatexTemplateHygiene` (`ENH-0019`): Flags leftover writing-template placeholders (`(X)`, `(Y)`, `(Z)`, `TBD`, `XX%`, `[INSERT`) in project `.tex` manuscripts while excluding vendored `.agents/` and `.github/` templates.
 
-### 2.3 Continuous Overseer Nudge CLI & Backlog (`factory nudge` / `factory overseer-audit`)
+### 2.3 Continuous Overseer Nudge CLI, Learning Seam & Portable Skills (`factory nudge` / `factory overseer-audit`)
 
-We extend `src/cli/factory.mjs` with `nudge` and `overseer-audit` subcommands and maintain `ENHANCEMENT_BACKLOG.md` and `PR_DESCRIPTION.md` for human review before merging to `main`.
+We encapsulate `buildOverseerAuditReport` and `recordOverseerNudge` inside `src/modules/learning/index.mjs` (`lib/overseer-nudge.mjs`), expose thin `nudge` and `overseer-audit` adapters in `src/cli/factory.mjs`, maintain `ENHANCEMENT_BACKLOG.md` and `PR_DESCRIPTION.md`, and provide `scripts/sync-plugin-skills.sh` so optional Marketplace plugin skills are linked portably without committing machine-local absolute symlinks to Git.
 
 ---
 

@@ -47,7 +47,7 @@ software_factory/
 | **Door Type (Reversibility)** | **One-Way Door** | Mints `ADR-0010`, extends public Deep Module seams (`src/modules/sizing/index.mjs`, `src/modules/sensors/index.mjs`), and adds CLI subcommands (`nudge`, `overseer-audit`). |
 | **Blast Radius** | **System-Wide** | Touches `sizing`, `sensors`, `cli`, `CONTEXT.md`, `GLOSSARY.md`, `docs/adr/`, `.planning/ROADMAP.md`, and `.agents/skills/`. |
 | **Axis 1: Architecture & Seam Purity** | **PASS (`0` Violations)** | All new sensor and sizing functions are encapsulated inside `src/modules/<domain>/lib/` and exported strictly via named exports in `src/modules/<domain>/index.mjs`. |
-| **Axis 2: Test & Sensor Verification** | **PASS (`58/58` Tests)** | Every new sensor (`ENH-0007` through `ENH-0019`) has its own isolated `test()` block in `tests/aidlc.seam.test.mjs`. |
+| **Axis 2: Test & Sensor Verification** | **PASS (`61/61` Tests)** | Every new sensor (`ENH-0007` through `ENH-0019`), `runSensors()` citation-bijection wiring, `src/modules/learning/` overseer seam, and `< 800`-LOC `src/` file ceiling are verified in `tests/aidlc.seam.test.mjs`. |
 | **Operations & Rollback Runbook** | **Documented** | Revert branch `feat/research-factory-enhancements` (or `git revert` commit range) and run `node src/cli/factory.mjs verify` to restore the pre-`ADR-0010` 50-test baseline. |
 
 ---
@@ -89,5 +89,5 @@ software_factory/
    - Furthermore, `checkRawRecordProvenance` does not execute `bench/recompute.py` or verify that the records inside `raw/*.jsonl` came from a real external database (e.g., FAISS/pgvector/SpiceDB) rather than an in-memory synthetic generator. Executing `bench/recompute.py --check` and tracing headline numbers back to generating code remain mandatory Gate-6 reviewer tasks.
 3. **Citation Key Bijection vs. Upstream Bibliographic Accuracy (`checkLatexCitationBijection`)**:
    - `checkLatexCitationBijection` verifies 1:1 key parity between `\cite{key}` and `\bibitem{key}` / BibTeX entries in local text, but does not query CrossRef, arXiv, or OpenAlex over the network (to preserve `ADR-0004` zero-dependency offline determinism). Upstream author/title/venue verification must be performed during Gate 1 and Gate 6 using the linked `Science` (`literature-search-arxiv`, `literature-search-openalex`) and `Tavily` skills.
-4. **Symlinked Marketplace Skills (`.agents/skills/`)**:
-   - The 7 Marketplace plugin skills (`literature-search-arxiv`, `literature-search-openalex`, `embl-ebi-ols`, `tavily-search`, `tavily-research`, `coderabbit-review`, `coderabbit-autofix`) are machine-local symlinks pointing to `/Users/tejap/.gemini/config/plugins/...`. Before pushing to a shared remote repository, those symlinks should either be replaced with portable relative copies or listed in a bootstrap installer script.
+4. **Portable Marketplace Plugin Skills (`.agents/skills/` + `scripts/sync-plugin-skills.sh`)**:
+   - The 7 optional Marketplace plugin skills (`literature-search-arxiv`, `literature-search-openalex`, `embl-ebi-ols`, `tavily-search`, `tavily-research`, `coderabbit-review`, `coderabbit-autofix`) are **not** committed as machine-local symlinks; instead they are documented in `.agents/skills/PLUGIN_SKILLS.md`, ignored in `.gitignore`, and linked on-demand via `./scripts/sync-plugin-skills.sh`.
